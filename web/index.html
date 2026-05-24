@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Piano Simulator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="error-banner" class="error-banner hidden" role="alert"></div>
+
+  <header class="header">
+    <h1>Piano Simulator</h1>
+    <p class="subtitle">Mappings loaded from <code>piano.sh</code></p>
+  </header>
+
+  <main class="main">
+    <section id="mac-keyboard-guide" class="mac-keyboard-guide" aria-label="Mac two-row piano map">
+      <h2>Your Mac Keyboard = Piano</h2>
+      <p class="twin-towers-intro">
+        <strong>Twin Towers:</strong> the two black keys upstairs are <kbd>W</kbd> and <kbd>E</kbd>.
+        <strong>Front door:</strong> <kbd>A</kbd> downstairs (left of the towers) is middle C.
+        Walk the sidewalk: <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>G</kbd> <kbd>H</kbd> <kbd>J</kbd> <kbd>K</kbd>.
+        Tap lightly — no need to press hard on a MacBook keyboard.
+      </p>
+      <div id="mac-keys-visual" class="mac-keys-visual"></div>
+      <p class="mac-tip">Skip the top F-keys row (brightness/volume). Use the letter rows only.</p>
+    </section>
+
+    <section class="piano-section" aria-label="Piano keyboard">
+      <div class="piano-toolbar">
+        <button
+          id="btn-cover-keys"
+          type="button"
+          class="btn-cover-keys"
+          aria-pressed="false"
+          title="Hide keyboard letter hints while practicing"
+        >
+          Cover keys
+        </button>
+        <p class="cover-status" id="cover-status" aria-live="polite"></p>
+      </div>
+      <div class="piano-wrap">
+        <div id="keyboard" class="piano-horizontal"></div>
+        <div id="pop-layer" class="pop-layer" aria-hidden="true"></div>
+      </div>
+      <p class="pitch-hint" aria-hidden="true">
+        <span>Low</span>
+        <span class="pitch-hint-arrow">←</span>
+        <span class="pitch-hint-label">G3 … C5</span>
+        <span class="pitch-hint-arrow">→</span>
+        <span>High</span>
+      </p>
+    </section>
+
+    <section id="songs-container" class="songs-container" aria-label="Song play-along guides">
+      <!-- built from piano.sh -->
+    </section>
+
+    <section class="help-section">
+      <h2>Controls</h2>
+      <p id="key-hints" class="key-hints" data-full-hints="">Loading mappings…</p>
+      <p id="key-hints-covered" class="key-hints key-hints-covered hidden">
+        Key hints hidden — practice from note names only. Click <strong>Show keys</strong> to reveal mappings.
+      </p>
+    </section>
+  </main>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
