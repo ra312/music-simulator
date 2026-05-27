@@ -1185,7 +1185,7 @@ function buildMacKeyboardGuide() {
     const note = document.createElement("p");
     note.className = "mac-88-note coverable";
     note.textContent =
-      "Uppercase letters are sharps in low/high bands. Phrase and full-song keys do not fire while a layer key is held.";
+      "Hold r, l, or j — piano letter hints switch to that layer; release to return to classic (Z X N, A–K, W E T Y U). Shift + letter = sharp in low/high bands. Tap j alone for B4. Phrase and full-song keys do not fire while a layer key is held.";
     detailsBody.appendChild(note);
   }
 }
