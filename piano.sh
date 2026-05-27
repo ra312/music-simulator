@@ -320,6 +320,20 @@ PLAY_NOTE_EXTENDED() {
 
 
 clear
+ACTIVE_SONG="twinkle"
+
+PLAY_ACTIVE_PHRASE() {
+    case "$ACTIVE_SONG" in
+        twinkle) PLAY_TWINKLE_PHRASE "$1" ;;
+        xmas) PLAY_XMAS_PHRASE "$1" ;;
+        ducks) PLAY_DUCKS_PHRASE "$1" ;;
+        bridge) PLAY_BRIDGE_PHRASE "$1" ;;
+        oysya) PLAY_OYSYA_PHRASE "$1" ;;
+        golden) PLAY_GOLDEN_PHRASE "$1" ;;
+        takedown) PLAY_TAKEDOWN_PHRASE "$1" ;;
+    esac
+}
+
 cat <<'EOF'
 ==========================================
           🎹  BASH PIANO  🎹
@@ -339,23 +353,13 @@ cat <<'EOF'
   Twin Towers: [W] and [E] are the two black keys upstairs.
   Front door:  [A] downstairs left of the towers = Middle C (C4).
 
-   Twinkle Twinkle:
-   [R] = full song   [1]–[6] = one phrase   (T = F# black key)
+  Song phrase keys (letters only):
+   [b][c][i][o][p][v] = phrases 1–6 for ACTIVE song
+   Active song changes when you play a full song key.
 
-   Merry Christmas:
-   [M] = full song   [7][8][9][0][-][=] = phrases 1–6
-
-   Five Little Ducks:
-   [L] = full song   [,][.][/][;][[]] = phrases 1–6
-
-   London Bridge:
-   [!] = full song   [I][O][P][V] = phrases 1–4
-
-   Ойся ты ойся (Oysya ty oysya):
-   [&] = full song   [?][@][#][$][%][^] = phrases 1–6
-
-   Golden (HUNTR/X / Huntrix):
-   [|] = full song   [space][`][(][)][']["] = phrases 1–6
+  Full-song keys (letters only):
+   Twinkle [R]   Christmas [M]   Ducks [L]
+   Bridge [B]    Oysya [O]       Golden [N]    Takedown [P]
 
   FULL 88 KEYS (A0–C8) — same note keys, octave layers:
    Web: hold modifier + key (classic layer = no modifier).
@@ -367,139 +371,139 @@ cat <<'EOF'
 
  ── Twinkle Twinkle — play along with keys ──
 
-   [1] C C G G A A G     Twinkle, twinkle, little star
+  [b] C C G G A A G     Twinkle, twinkle, little star
        A A G G H H G
 
-   [2] F F E E D D C     How I wonder what you are
+  [c] F F E E D D C     How I wonder what you are
        F F D D S S A
 
-   [3] G G F F E E D     Up above the world so high
+  [i] G G F F E E D     Up above the world so high
        G G F F D D S
 
-   [4] G G F F E E D     Like a diamond in the sky
+  [o] G G F F E E D     Like a diamond in the sky
        G G F F D D S
 
-   [5] C C G G A A G     Twinkle, twinkle, little star
+  [p] C C G G A A G     Twinkle, twinkle, little star
        A A G G H H G
 
-   [6] F F E E D D C     How I wonder what you are
+  [v] F F E E D D C     How I wonder what you are
        F F D D S S A
 
  ── Merry Christmas — play along with keys ──
 
-   [7] G C C E G C       We wish you a Merry Christmas
+  [b] G C C E G C       We wish you a Merry Christmas
        Z A A D G A
 
-   [8] G C C E G C       We wish you a Merry Christmas
+  [c] G C C E G C       We wish you a Merry Christmas
        Z A A D G A
 
-   [9] G C C E G C D E D C   and a Happy New Year
+  [i] G C C E G C D E D C   and a Happy New Year
        Z A A D G A S D S A
 
-   [0] E E E E E D C D E F D C   Good tidings we bring
+  [o] E E E E E D C D E F D C   Good tidings we bring
        D D D D D S A S D F S A
 
-   [-] E D C C B A A D D C   Good tidings for Christmas
+  [p] E D C C B A A D D C   Good tidings for Christmas
        D S A A N X X S S A
 
-   [=] G G F G G F G C   Oh bring us some figgy pudding
+  [v] G G F G G F G C   Oh bring us some figgy pudding
        Z Z F Z Z F Z A
 
  ── Five Little Ducks — play along with keys ──
 
-   [,] G G G D E E D     Five little ducks went out one day
+  [b] G G G D E E D     Five little ducks went out one day
        G G G S D D S
 
-   [.] E E D B C C       Over the hills and far away
+  [c] E E D B C C       Over the hills and far away
        D D S N A A
 
-   [/] C C D E G G G     Mother duck said, Quack, quack, quack, quack
+  [i] C C D E G G G     Mother duck said, Quack, quack, quack, quack
        A A S D G G G
 
-   [;] G G G D E E C     But only four little ducks came back
+  [o] G G G D E E C     But only four little ducks came back
        G G G S D D A
 
-   [[] G G G D E E D     Four little ducks went out one day
+  [p] G G G D E E D     Four little ducks went out one day
        G G G S D D S
 
-   []] G G G D E E C     But only three little ducks came back
+  [v] G G G D E E C     But only three little ducks came back
        G G G S D D A
 
  ── London Bridge — play along with keys ──
 
-   [I] G A G F E F G     London Bridge is falling down
+  [b] G A G F E F G     London Bridge is falling down
        G H G F D F G
 
-   [O] D E F E F G A G   Falling down, falling down
+  [c] D E F E F G A G   Falling down, falling down
        S D F D F G H G
 
-   [P] G A G F E F G     London Bridge is falling down
+  [i] G A G F E F G     London Bridge is falling down
        G H G F D F G
 
-   [V] C C B A G         My fair lady
+  [o] C C B A G         My fair lady
        K K J H G
 
  ── Ойся ты ойся — play along with keys ──
 
-   [?] A A G A D A A G F E     Ойся ты ойся, ты меня не бойся
+  [b] A A G A D A A G F E     Ойся ты ойся, ты меня не бойся
        H H G H S H H G F D
 
-   [@] E E D E F G G G A G     (melody continues)
+  [c] E E D E F G G G A G     (melody continues)
        D D S D F G G G H G
 
-   [#] F E D D A A G A D
+  [i] F E D D A A G A D
        F D S S H H G H S
 
-   [$] A A G F E E E D E F
+  [o] A A G F E E E D E F
        H H G F D D D S D F
 
-   [%] G G G A G F E D D A
+  [p] G G G A G F E D D A
        G G G H G F D S S H
 
-   [^] A G A D A A G F E E
+  [v] A G A D A A G F E E
        H G H S H H G F D D
 
  ── Golden — play along with keys ──
 
-   [ ] G A B B G A B B     (verse hook)
+  [b] G A B B G A B B     (verse hook)
        G H J J G H J J
 
-   [`] B B E E E           We're goin' up
+  [c] B B E E E           We're goin' up
        N N D D D
 
-   [(] B B D D A           It's our moment
+  [i] B B D D A           It's our moment
        N N S S X
 
-   [)] D D D D C C C B     glowin'
+  [o] D D D D C C C B     glowin'
        S S S S A A A N
 
-   ['] D D D D C C C B     golden
+  [p] D D D D C C C B     golden
        S S S S A A A N
 
-   ["] E E G T E D D A     up with our voices
+  [v] E E G T E D D A     up with our voices
        D D G T D S S X
 
  ── Takedown (HUNTR/X) — play along with keys ──
 
-   [b] W Y W Y           Takedown, takedown
+  [b] W Y W Y           Takedown, takedown
        W U W U
 
-   [B] H Y Y T Y         Takedown, down, down, down
+  [c] H Y Y T Y         Takedown, down, down, down
        H U U F U
 
-   [c] J Y J Y J Y J Y W Y   I don't think you're ready for the takedown
+  [i] J Y J Y J Y J Y W Y   I don't think you're ready for the takedown
        J U J U J U J U W U
 
-   [C] W Y W Y H H T Y   Woah-oh, da-da-da, down
+  [o] W Y W Y H H T Y   Woah-oh, da-da-da, down
        W U W U H H F U
 
-   [~] W W W E W W W     So sweet, so easy on the eyes
+  [p] W W W E W W W     So sweet, so easy on the eyes
        W W W D W W W
 
-   [+] Y Y W T T T       Ima gear up and take you down
+  [v] Y Y W T T T       Ima gear up and take you down
        U U W F F F
 
-   [_] play full Takedown (all phrases)
+  [P] play full Takedown (all phrases)
 
    [Q] = quit
 ==========================================
@@ -508,69 +512,35 @@ EOF
 while true; do
     read -r -s -n 1 key
     case "$key" in
-        z|Z) PLAY_NOTE "G3" ;;
-        x|X) PLAY_NOTE "A3" ;;
-        n|N) PLAY_NOTE "B3" ;;
-        w|W) PLAY_NOTE "C#4" ;;
-        e|E) PLAY_NOTE "D#4" ;;
-        t|T) PLAY_NOTE "F#4" ;;
-        y|Y) PLAY_NOTE "G#4" ;;
-        u|U) PLAY_NOTE "A#4" ;;
-        a|A) PLAY_NOTE "C4" ;;
-        s|S) PLAY_NOTE "D4" ;;
-        d|D) PLAY_NOTE "E4" ;;
-        f|F) PLAY_NOTE "F4" ;;
-        g|G) PLAY_NOTE "G4" ;;
-        h|H) PLAY_NOTE "A4" ;;
-        j|J) PLAY_NOTE "B4" ;;
-        k|K) PLAY_NOTE "C5" ;;
-        1) PLAY_TWINKLE_PHRASE 1 ;;
-        2) PLAY_TWINKLE_PHRASE 2 ;;
-        3) PLAY_TWINKLE_PHRASE 3 ;;
-        4) PLAY_TWINKLE_PHRASE 4 ;;
-        5) PLAY_TWINKLE_PHRASE 5 ;;
-        6) PLAY_TWINKLE_PHRASE 6 ;;
-        7) PLAY_XMAS_PHRASE 1 ;;
-        8) PLAY_XMAS_PHRASE 2 ;;
-        9) PLAY_XMAS_PHRASE 3 ;;
-        0) PLAY_XMAS_PHRASE 4 ;;
-        -) PLAY_XMAS_PHRASE 5 ;;
-        =) PLAY_XMAS_PHRASE 6 ;;
-        ,|,) PLAY_DUCKS_PHRASE 1 ;;
-        .|.) PLAY_DUCKS_PHRASE 2 ;;
-        /|/) PLAY_DUCKS_PHRASE 3 ;;
-        \;|;) PLAY_DUCKS_PHRASE 4 ;;
-        \[|\[) PLAY_DUCKS_PHRASE 5 ;;
-        \]|]) PLAY_DUCKS_PHRASE 6 ;;
-        r|R) PLAY_TWINKLE ;;
-        m|M) PLAY_XMAS ;;
-        l|L) PLAY_DUCKS ;;
-        i|I) PLAY_BRIDGE_PHRASE 1 ;;
-        o|O) PLAY_BRIDGE_PHRASE 2 ;;
-        p|P) PLAY_BRIDGE_PHRASE 3 ;;
-        v|V) PLAY_BRIDGE_PHRASE 4 ;;
-        !|!) PLAY_BRIDGE ;;
-        ?|?) PLAY_OYSYA_PHRASE 1 ;;
-        @|@) PLAY_OYSYA_PHRASE 2 ;;
-        \#|#) PLAY_OYSYA_PHRASE 3 ;;
-        \$|$) PLAY_OYSYA_PHRASE 4 ;;
-        %|%) PLAY_OYSYA_PHRASE 5 ;;
-        ^|^) PLAY_OYSYA_PHRASE 6 ;;
-        &|&) PLAY_OYSYA ;;
-        \ |'') PLAY_GOLDEN_PHRASE 1 ;;
-        \`|`) PLAY_GOLDEN_PHRASE 2 ;;
-        \(|() PLAY_GOLDEN_PHRASE 3 ;;
-        \)|)) PLAY_GOLDEN_PHRASE 4 ;;
-        \'|') PLAY_GOLDEN_PHRASE 5 ;;
-        \"|") PLAY_GOLDEN_PHRASE 6 ;;
-        \|'|`) PLAY_GOLDEN ;;
-        b) PLAY_TAKEDOWN_PHRASE 1 ;;
-        B) PLAY_TAKEDOWN_PHRASE 2 ;;
-        c) PLAY_TAKEDOWN_PHRASE 3 ;;
-        C) PLAY_TAKEDOWN_PHRASE 4 ;;
-        ~) PLAY_TAKEDOWN_PHRASE 5 ;;
-        +) PLAY_TAKEDOWN_PHRASE 6 ;;
-        _|_) PLAY_TAKEDOWN ;;
+        z|z) PLAY_NOTE "G3" ;;
+        x|x) PLAY_NOTE "A3" ;;
+        n|n) PLAY_NOTE "B3" ;;
+        w|w) PLAY_NOTE "C#4" ;;
+        e|e) PLAY_NOTE "D#4" ;;
+        t|t) PLAY_NOTE "F#4" ;;
+        y|y) PLAY_NOTE "G#4" ;;
+        u|u) PLAY_NOTE "A#4" ;;
+        a|a) PLAY_NOTE "C4" ;;
+        s|s) PLAY_NOTE "D4" ;;
+        d|d) PLAY_NOTE "E4" ;;
+        f|f) PLAY_NOTE "F4" ;;
+        g|g) PLAY_NOTE "G4" ;;
+        h|h) PLAY_NOTE "A4" ;;
+        j|j) PLAY_NOTE "B4" ;;
+        k|k) PLAY_NOTE "C5" ;;
+        b) PLAY_ACTIVE_PHRASE 1 ;;
+        c) PLAY_ACTIVE_PHRASE 2 ;;
+        i) PLAY_ACTIVE_PHRASE 3 ;;
+        o) PLAY_ACTIVE_PHRASE 4 ;;
+        p) PLAY_ACTIVE_PHRASE 5 ;;
+        v) PLAY_ACTIVE_PHRASE 6 ;;
+        R) ACTIVE_SONG="twinkle"; PLAY_TWINKLE ;;
+        M) ACTIVE_SONG="xmas"; PLAY_XMAS ;;
+        L) ACTIVE_SONG="ducks"; PLAY_DUCKS ;;
+        B) ACTIVE_SONG="bridge"; PLAY_BRIDGE ;;
+        O) ACTIVE_SONG="oysya"; PLAY_OYSYA ;;
+        N) ACTIVE_SONG="golden"; PLAY_GOLDEN ;;
+        P) ACTIVE_SONG="takedown"; PLAY_TAKEDOWN ;;
         \\)
             read -r -s -n 1 layer
             read -r -s -n 1 nk

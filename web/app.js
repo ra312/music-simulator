@@ -78,7 +78,7 @@ const SONG_META = {
     title: "Twinkle Twinkle Little Star",
     shortTitle: "Twinkle",
     fullKey: "R",
-    phraseKeys: ["1", "2", "3", "4", "5", "6"],
+    phraseKeys: ["b", "c", "i", "o", "p", "v"],
     lyrics: [
       "Twinkle, twinkle, little star",
       "How I wonder what you are",
@@ -92,7 +92,7 @@ const SONG_META = {
     title: "We Wish You a Merry Christmas",
     shortTitle: "Christmas",
     fullKey: "M",
-    phraseKeys: ["7", "8", "9", "0", "-", "="],
+    phraseKeys: ["b", "c", "i", "o", "p", "v"],
     lyrics: [
       "We wish you a Merry Christmas",
       "We wish you a Merry Christmas",
@@ -106,7 +106,7 @@ const SONG_META = {
     title: "Five Little Ducks",
     shortTitle: "Ducks",
     fullKey: "L",
-    phraseKeys: [",", ".", "/", ";", "[", "]"],
+    phraseKeys: ["b", "c", "i", "o", "p", "v"],
     lyrics: [
       "Five little ducks went out one day",
       "Over the hills and far away",
@@ -119,8 +119,8 @@ const SONG_META = {
   bridge: {
     title: "London Bridge Is Falling Down",
     shortTitle: "Bridge",
-    fullKey: "!",
-    phraseKeys: ["i", "o", "p", "v"],
+    fullKey: "B",
+    phraseKeys: ["b", "c", "i", "o"],
     lyrics: [
       "London Bridge is falling down",
       "Falling down, falling down",
@@ -131,8 +131,8 @@ const SONG_META = {
   oysya: {
     title: "Ойся ты ойся (Oysya ty oysya)",
     shortTitle: "Oysya",
-    fullKey: "&",
-    phraseKeys: ["?", "@", "#", "$", "%", "^"],
+    fullKey: "O",
+    phraseKeys: ["b", "c", "i", "o", "p", "v"],
     lyrics: [
       "Ойся ты ойся, ты меня не бойся",
       "Ойся ты ойся, ты меня не бойся",
@@ -145,8 +145,8 @@ const SONG_META = {
   golden: {
     title: "Golden (HUNTR/X / Huntrix)",
     shortTitle: "Golden",
-    fullKey: "|",
-    phraseKeys: [" ", "`", "(", ")", "'", '"'],
+    fullKey: "N",
+    phraseKeys: ["b", "c", "i", "o", "p", "v"],
     lyrics: [
       "Verse hook",
       "We're goin' up",
@@ -159,8 +159,8 @@ const SONG_META = {
   takedown: {
     title: "Takedown (KPop Demon Hunters)",
     shortTitle: "Takedown",
-    fullKey: "*",
-    phraseKeys: ["b", "c", "~", "+", "_", "*"],
+    fullKey: "P",
+    phraseKeys: ["b", "c", "i", "o", "p", "v"],
     lyrics: [
       "Takedown, takedown",
       "Takedown, down, down, down",
@@ -1289,23 +1289,14 @@ function updateKeyHints() {
   const extended =
     "88-key layers: ⌃⌥ low2 | ⌥ low1 | ⌃ down | ⇧ up | ⇧⌥ high1 | ⇧⌃ high2 | ⇧⌃⌥U=A#0";
   const shortcuts =
-    "Twinkle [1]–[6] [R]  |  Christmas [7][8][9][0][-][=] [M]  |  Ducks [,][.][/][;] [[]] [L]  |  Bridge [I][O][P][V] [!]  |  Oysya [?][@][#][$][%][^] [&]  |  Golden [space][`][(][)]['] [\"] [|]  |  Takedown [b][c][~][+][_][*] [*]  |  Black keys [W][E][T][Y][U]";
+    "Phrase keys (selected song): [B][C][I][O][P][V]  |  Full songs: Twinkle [R], Christmas [M], Ducks [L], Bridge [B], Oysya [O], Golden [N], Takedown [P]  |  Black keys [W][E][T][Y][U]";
   const full = `${mapped}  |  ${extended}  |  ${shortcuts}`;
   keyHintsEl.textContent = full;
   keyHintsEl.dataset.fullHints = full;
 }
 
 function findPhraseKeyIndex(meta, key) {
-  const exact = meta.phraseKeys.indexOf(key);
-  if (exact !== -1) return exact;
-  const lower = key.toLowerCase();
-  const caseInsensitiveIdx = meta.phraseKeys.findIndex((k) => k === lower);
-  if (caseInsensitiveIdx === -1) return -1;
-  const hasCasePair = meta.phraseKeys.some(
-    (k) => k !== lower && k.toLowerCase() === lower
-  );
-  if (hasCasePair) return -1;
-  return caseInsensitiveIdx;
+  return meta.phraseKeys.indexOf(key);
 }
 
 function handleKeydown(event) {
@@ -1322,8 +1313,8 @@ function handleKeydown(event) {
       event.preventDefault();
       unlockAudio();
       playNote(ext.note, noteToKeyEl.get(ext.note) ?? null);
+      return;
     }
-    return;
   }
 
   const entry = keymap.find(
@@ -1339,7 +1330,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (key === "r" || key === "R") {
+  if (key === "R") {
     event.preventDefault();
     unlockAudio();
     playFullSong(
@@ -1349,7 +1340,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (key === "m" || key === "M") {
+  if (key === "M") {
     event.preventDefault();
     unlockAudio();
     playFullSong(
@@ -1359,7 +1350,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (key === "l" || key === "L") {
+  if (key === "L") {
     event.preventDefault();
     unlockAudio();
     playFullSong(
@@ -1369,7 +1360,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (key === "!") {
+  if (key === "B") {
     event.preventDefault();
     unlockAudio();
     playFullSong(
@@ -1379,7 +1370,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (key === "&") {
+  if (key === "O") {
     event.preventDefault();
     unlockAudio();
     playFullSong(
@@ -1389,7 +1380,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (key === "|") {
+  if (key === "N") {
     event.preventDefault();
     unlockAudio();
     triggerFullSongPlay(
@@ -1399,7 +1390,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (key === "*") {
+  if (key === "P") {
     event.preventDefault();
     unlockAudio();
     playFullSong(
@@ -1409,21 +1400,20 @@ function handleKeydown(event) {
     return;
   }
 
-  for (const songId of SONG_DISPLAY_ORDER) {
+  if (selectedSongId) {
+    const songId = selectedSongId;
     const meta = SONG_META[songId];
     const idx = findPhraseKeyIndex(meta, key);
-    if (idx === -1) continue;
-
-    const phraseNum = idx + 1;
-    if (!songs[songId][String(phraseNum)]) continue;
-
-    event.preventDefault();
-    unlockAudio();
-    const btn = songsContainer.querySelector(
-      `.phrase-btn[data-song="${songId}"][data-phrase="${phraseNum}"]`
-    );
-    triggerPhrasePlay(songId, phraseNum, btn);
-    return;
+    if (idx !== -1) {
+      const phraseNum = idx + 1;
+      if (!songs[songId][String(phraseNum)]) return;
+      event.preventDefault();
+      unlockAudio();
+      const btn = songsContainer.querySelector(
+        `.phrase-btn[data-song="${songId}"][data-phrase="${phraseNum}"]`
+      );
+      triggerPhrasePlay(songId, phraseNum, btn);
+    }
   }
 }
 

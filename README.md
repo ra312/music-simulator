@@ -14,17 +14,14 @@ The piano uses the standard **two-row** layout:
 
 - **Twin Towers:** W and E are the two black keys above A–S.
 - **Front door:** A = middle C (C4).
-- **Twinkle full song:** R (not T — T is F♯).
-- **Five Little Ducks phrases:** `,` `.` `/` `;` `[` `]`
-- **London Bridge phrases:** `I` `O` `P` `V` — full song `!`
-- **Ойся ты ойся (Oysya):** phrases `?` `@` `#` `$` `%` `^` — full song `&`
-- **Golden (HUNTR/X / Huntrix):** phrases `space` `` ` `` `(` `)` `'` `"` — full song `|`
-- **Takedown (HUNTR/X):** phrases `b` `c` `~` `+` `_` `*` — full song `*`
-- **Takedown (KPop Demon Hunters / HUNTR/X):** phrases `b` `B` `c` `C` `~` `+` — full song `_`
+- **Phrase keys (letters only):** `b` `c` `i` `o` `p` `v` (Bridge uses first 4).
+- **Web behavior:** phrase keys trigger the currently selected song in the picker.
+- **Terminal behavior:** phrase keys trigger the current active song (set when a full-song key is played).
+- **Full-song keys (letters only):** Twinkle `R`, Christmas `M`, Ducks `L`, Bridge `B`, Oysya `O`, Golden `N`, Takedown `P`.
 
 Melody for Oysya is a simplified RH arrangement from public piano-letter tutorials (Synthesia-style); MIDI export can be added later from the phrase notes in `piano.sh`.
 
-Golden and Takedown use simplified chorus hooks (G3–C5, C♯ minor) from the K-pop soundtrack; phrase keys (`b` `B` `c` `C` `~` `+` `_`) avoid conflicts with play-along keys and other songs on the Mac layout.
+Golden and Takedown use simplified chorus hooks (G3–C5, C♯ minor) from the K-pop soundtrack; all phrase/full controls now use letters only so terminal and web keyboard controls stay aligned.
 
 ## Full 88 keys from the keyboard (A0–C8)
 
