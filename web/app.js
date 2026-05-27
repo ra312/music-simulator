@@ -218,8 +218,11 @@ const noteToKeyEl = new Map();
 /** @type {Map<string, string>} */
 const noteToKeyHint = new Map();
 
-/** @type {Map<string, string>} */
-const noteToExtendedHint = new Map();
+/** Classic note → key letter (no layer). @type {Map<string, string>} */
+const classicHintsByNote = new Map();
+
+/** Layer id → note → key letter. @type {Map<string, Map<string, string>>} */
+const layerHintsByNote = new Map();
 
 /** @type {Map<string, number>} */
 const noteFreqCache = new Map();
@@ -322,11 +325,8 @@ function activeLayer() {
 
 /** @param {string} layer @param {string} key */
 function findLayeredNote(layer, key) {
-  const keyLower = key.length === 1 ? key.toLowerCase() : key;
-  const keyUpper = key.length === 1 ? key.toUpperCase() : key;
-  return extendedKeymap.find(
-    (e) => e.layer === layer && (e.key === keyLower || e.key === keyUpper)
-  );
+  if (key.length !== 1) return undefined;
+  return extendedKeymap.find((e) => e.layer === layer && e.key === key);
 }
 
 /**
@@ -457,17 +457,65 @@ export function parsePianoSh(text) {
 
 function buildNoteToKeyHint() {
   noteToKeyHint.clear();
-  noteToExtendedHint.clear();
+  classicHintsByNote.clear();
+  layerHintsByNote.clear();
+
   for (const entry of keymap) {
-    noteToKeyHint.set(entry.note, entry.primaryKey.toUpperCase());
+    const hint = entry.primaryKey.toUpperCase();
+    classicHintsByNote.set(entry.note, hint);
+    noteToKeyHint.set(entry.note, hint);
   }
-  for (const entry of extendedKeymap) {
-    const hint = entry.key.toUpperCase();
-    noteToExtendedHint.set(entry.note, hint);
-    if (!noteToKeyHint.has(entry.note)) {
-      noteToKeyHint.set(entry.note, hint);
+
+  for (const layer of ["r", "l", "j"]) {
+    const byNote = new Map();
+    for (const entry of extendedKeymap) {
+      if (entry.layer === layer) {
+        byNote.set(entry.note, entry.key.toUpperCase());
+      }
+    }
+    layerHintsByNote.set(layer, byNote);
+  }
+}
+
+/** @returns {string | null} Active layer for piano hints, or null for classic. */
+function hintLayer() {
+  return activeLayer();
+}
+
+/** @param {string} noteId */
+function keyboardHintForNote(noteId) {
+  const layer = hintLayer();
+  if (layer) {
+    return layerHintsByNote.get(layer)?.get(noteId) ?? "";
+  }
+  return classicHintsByNote.get(noteId) ?? "";
+}
+
+function updateKeyboardHints() {
+  const layer = hintLayer();
+  document.body.classList.toggle("layer-r-active", layer === "r");
+  document.body.classList.toggle("layer-l-active", layer === "l");
+  document.body.classList.toggle("layer-j-active", layer === "j");
+
+  for (const [noteId, el] of noteToKeyEl) {
+    const hint = keyboardHintForNote(noteId);
+    let hintEl = el.querySelector(".key-hint");
+    if (hint) {
+      if (!hintEl) {
+        hintEl = document.createElement("span");
+        hintEl.className = "key-hint coverable";
+        el.appendChild(hintEl);
+      }
+      hintEl.textContent = hint;
+      hintEl.classList.remove("hidden");
+    } else if (hintEl) {
+      hintEl.remove();
     }
   }
+}
+
+function refreshLayerUi() {
+  updateKeyboardHints();
 }
 
 /** @param {string[]} notes */
@@ -840,8 +888,11 @@ function playFullSong(songId, activeBtn = null) {
  */
 function createKeyButton(noteId, kind, mappedByNote, afterWhiteIndex) {
   const entry = mappedByNote.get(noteId);
-  const extHint = noteToExtendedHint.get(noteId);
-  const isMapped = Boolean(entry) || Boolean(extHint);
+  const hasClassic = classicHintsByNote.has(noteId);
+  const hasLayered = ["r", "l", "j"].some((layer) =>
+    layerHintsByNote.get(layer)?.has(noteId)
+  );
+  const isMapped = hasClassic || hasLayered;
 
   const btn = document.createElement("button");
   btn.type = "button";
@@ -852,19 +903,18 @@ function createKeyButton(noteId, kind, mappedByNote, afterWhiteIndex) {
     btn.style.setProperty("--after-white-index", String(afterWhiteIndex));
   }
 
-  const hintText = entry
-    ? entry.primaryKey.toUpperCase()
-    : extHint ?? "";
-  const hintClass = "key-hint coverable";
+  const hintText = keyboardHintForNote(noteId);
   const keyHintHtml = hintText
-    ? `<span class="${hintClass}">${hintText}</span>`
+    ? `<span class="key-hint coverable">${hintText}</span>`
     : "";
 
-  const labelHtml = shouldShowNoteLabel(noteId)
+  const showLabel =
+    isMapped || shouldShowNoteLabel(noteId);
+  const labelHtml = showLabel
     ? `<span class="note-label">${noteLabel(noteId)}</span>`
     : "";
 
-  btn.innerHTML = `${keyHintHtml}${labelHtml}`;
+  btn.innerHTML = `${labelHtml}${keyHintHtml}`;
 
   const activate = (e) => {
     e.preventDefault();
@@ -1471,10 +1521,12 @@ function handleLayerKeyup(event) {
     }
     layersHeld.delete("j");
     jLayerUsed = false;
+    refreshLayerUi();
     return;
   }
   if (LAYER_KEYS.has(lower)) {
     layersHeld.delete(lower);
+    refreshLayerUi();
   }
 }
 
@@ -1497,6 +1549,7 @@ function handleKeydown(event) {
     event.preventDefault();
     layersHeld.add(lower);
     if (lower === "j") jLayerUsed = false;
+    refreshLayerUi();
     return;
   }
 
@@ -1510,9 +1563,8 @@ function handleKeydown(event) {
       playNote(ext.note, noteToKeyEl.get(ext.note) ?? null);
       return;
     }
+    if (layersHeld.size > 0) return;
   }
-
-  if (layersHeld.size > 0) return;
 
   const entry = keymap.find(
     (e) =>

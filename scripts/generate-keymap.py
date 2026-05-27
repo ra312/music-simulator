@@ -139,13 +139,15 @@ def build_assignments() -> list[dict]:
 
 
 def bash_case_lines(extended: list[dict]) -> list[str]:
+    """One case per (layer, key); use ':' delimiter — '|' is bash case alternation."""
+    seen: set[tuple[str, str]] = set()
     lines = []
     for a in extended:
-        k = a["key"]
-        ku = k.upper() if len(k) == 1 else k
-        lines.append(
-            f'        {a["bash"]}|{k}|{a["bash"]}|{ku}) PLAY_NOTE "{a["note"]}" ;;'
-        )
+        pair = (a["layer"], a["key"])
+        if pair in seen:
+            raise SystemExit(f"duplicate layer+key: {pair}")
+        seen.add(pair)
+        lines.append(f'        {a["layer"]}:{a["key"]}) PLAY_NOTE "{a["note"]}" ;;')
     return lines
 
 
@@ -160,8 +162,8 @@ def patch_piano_sh(piano_path: Path, extended: list[dict]) -> None:
     )
     cases = "\n".join(bash_case_lines(extended))
     text = re.sub(
-        r"PLAY_NOTE_(?:LAYER|EXTENDED)\(\) \{[\s\S]*?\n\}",
-        "PLAY_NOTE_LAYER() {\n    case \"$1|$2\" in\n"
+        r"PLAY_NOTE_LAYER\(\) \{[\s\S]*?\n\}",
+        "PLAY_NOTE_LAYER() {\n    case \"$1:$2\" in\n"
         + cases
         + "\n        *) ;;\n    esac\n}",
         text,
