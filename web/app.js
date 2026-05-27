@@ -329,6 +329,36 @@ function findLayeredNote(layer, key) {
   return extendedKeymap.find((e) => e.layer === layer && e.key === key);
 }
 
+/** @param {EventTarget | null} target */
+function isEditableTarget(target) {
+  if (!target || !(target instanceof Element)) return false;
+  const tag = target.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    target.isContentEditable
+  );
+}
+
+/** Classic band: match primary key case-insensitively (Caps Lock / Shift+X → A3). */
+function findClassicEntry(key) {
+  if (key.length !== 1) return undefined;
+  const lower = key.toLowerCase();
+  return keymap.find(
+    (e) =>
+      e.primaryKey === lower ||
+      e.keys.includes(key) ||
+      e.keys.includes(lower)
+  );
+}
+
+function clearLayersHeld() {
+  if (layersHeld.size === 0) return;
+  layersHeld.clear();
+  jLayerUsed = false;
+  refreshLayerUi();
+}
+
 /**
  * @param {string} text
  */
@@ -940,6 +970,7 @@ const MAC_KEYBOARD_LAYOUT = {
   ],
   white: [
     { key: "Z", note: "G3", low: true },
+    { key: "X", note: "A3", low: true },
     { key: "A", note: "C4", middleC: true },
     { key: "S", note: "D4" },
     { key: "D", note: "E4" },
@@ -986,7 +1017,8 @@ const MAC_MINI_ROWS = [
     kind: "white",
     keys: [
       { key: "Z", note: "G3", kind: "white", low: true },
-      { blank: true, span: 6 },
+      { key: "X", note: "A3", kind: "white", low: true },
+      { blank: true, span: 5 },
       { key: "N", note: "B3", kind: "white", low: true },
     ],
   },
@@ -1497,7 +1529,7 @@ function updateKeyHints() {
   const extended =
     "88 keys: hold [R] low A0–F#3 | [L]+I gap | [J] high C#5–C8 (or \\ r/l/j in terminal)";
   const shortcuts =
-    "Phrase keys (selected song): [B][C][I][O][P][V]  |  Full songs: Twinkle [R], Christmas [M], Ducks [L], Bridge [B], Oysya [O], Golden [N], Takedown [P]  |  Black keys [W][E][T][Y][U]";
+    "Phrase keys (selected song): [B][C][I][O][P][V]  |  Full songs: Twinkle [R], Christmas [M], Ducks [L], Bridge [B], Oysya [O], Golden [N], Takedown [P] (not while holding r/l/j)  |  Classic [X]=A3 (x or X)  |  [m] only with hold [r]  |  Black keys [W][E][T][Y][U]";
   const full = `${mapped}  |  ${extended}  |  ${shortcuts}`;
   keyHintsEl.textContent = full;
   keyHintsEl.dataset.fullHints = full;
@@ -1508,6 +1540,7 @@ function findPhraseKeyIndex(meta, key) {
 }
 
 function handleLayerKeyup(event) {
+  if (isEditableTarget(event.target)) return;
   const key = event.key;
   if (key.length !== 1) return;
   const lower = key.toLowerCase();
@@ -1532,6 +1565,8 @@ function handleLayerKeyup(event) {
 
 function handleKeydown(event) {
   if (event.repeat) return;
+  if (isEditableTarget(event.target)) return;
+
   const key = event.key;
   const lower = key.length === 1 ? key.toLowerCase() : "";
 
@@ -1563,21 +1598,17 @@ function handleKeydown(event) {
       playNote(ext.note, noteToKeyEl.get(ext.note) ?? null);
       return;
     }
-    if (layersHeld.size > 0) return;
   }
 
-  const entry = keymap.find(
-    (e) =>
-      e.keys.includes(key) ||
-      e.keys.includes(key.toLowerCase()) ||
-      e.primaryKey === key.toLowerCase()
-  );
-  if (entry) {
+  const classic = findClassicEntry(key);
+  if (classic) {
     event.preventDefault();
     unlockAudio();
-    playNote(entry.note, noteToKeyEl.get(entry.note) ?? null);
+    playNote(classic.note, noteToKeyEl.get(classic.note) ?? null);
     return;
   }
+
+  if (layer) return;
 
   if (key === "R") {
     event.preventDefault();
@@ -1709,8 +1740,9 @@ async function init() {
     setupLabelToggle();
     scrollPianoToMiddleC();
 
-    window.addEventListener("keydown", handleKeydown);
-    window.addEventListener("keyup", handleLayerKeyup);
+    window.addEventListener("keydown", handleKeydown, { capture: true });
+    window.addEventListener("keyup", handleLayerKeyup, { capture: true });
+    window.addEventListener("blur", clearLayersHeld);
 
     document.body.addEventListener("click", () => unlockAudio(), {
       once: true,
