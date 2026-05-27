@@ -838,7 +838,7 @@ function updateKeyHints() {
     .map((e) => `[${e.primaryKey.toUpperCase()}]=${noteLabel(e.note)}`)
     .join("  ");
   const shortcuts =
-    "Twinkle [1]–[6] [R]  |  Christmas [7][8][9][0][-][=] [M]  |  Ducks [,][.][/][;] [[]] [L]  |  Bridge [I][O][P][V] [!]  |  Oysya [?][@][#][$][%][^] [&]  |  Black keys [W][E][T][Y][U]";
+    "Twinkle [1]–[6] [R]  |  Christmas [7][8][9][0][-][=] [M]  |  Ducks [,][.][/][;] [[]] [L]  |  Bridge [I][O][P][V] [!]  |  Oysya [?][@][#][$][%][^] [&]  |  Golden [space][`][(][)]['] [\"] [|]  |  Black keys [W][E][T][Y][U]";
   const full = `${mapped}  |  ${shortcuts}`;
   keyHintsEl.textContent = full;
   keyHintsEl.dataset.fullHints = full;
@@ -918,7 +918,24 @@ function handleKeydown(event) {
     return;
   }
 
-  for (const songId of ["twinkle", "xmas", "ducks", "bridge", "oysya"]) {
+  if (key === "|") {
+    event.preventDefault();
+    unlockAudio();
+    playFullSong(
+      "golden",
+      songsContainer.querySelector('.btn-song-full[data-song="golden"]')
+    );
+    return;
+  }
+
+  for (const songId of [
+    "twinkle",
+    "xmas",
+    "ducks",
+    "bridge",
+    "oysya",
+    "golden",
+  ]) {
     const meta = SONG_META[songId];
     const idx = findPhraseKeyIndex(meta, key);
     if (idx === -1) continue;

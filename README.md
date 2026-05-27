@@ -18,8 +18,11 @@ The piano uses the standard **two-row** layout:
 - **Five Little Ducks phrases:** `,` `.` `/` `;` `[` `]`
 - **London Bridge phrases:** `I` `O` `P` `V` — full song `!`
 - **Ойся ты ойся (Oysya):** phrases `?` `@` `#` `$` `%` `^` — full song `&`
+- **Golden (HUNTR/X / Huntrix):** phrases `space` `` ` `` `(` `)` `'` `"` — full song `|`
 
 Melody for Oysya is a simplified RH arrangement from public piano-letter tutorials (Synthesia-style); MIDI export can be added later from the phrase notes in `piano.sh`.
+
+Golden uses a simplified chorus hook (G3–C5) from the K-pop demo track; phrase keys avoid conflicts with other songs on the Mac layout.
 
 ## Terminal piano (SoX)
 
