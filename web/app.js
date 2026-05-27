@@ -178,8 +178,17 @@ let audioCtx = null;
 /** @type {{ keys: string[], note: string, primaryKey: string }[]} */
 let keymap = [];
 
-/** @type {{ mods: string[], key: string, note: string, bash?: string }[]} */
+/** @type {{ layer: string, key: string, note: string, bash?: string }[]} */
 let extendedKeymap = [];
+
+/** @type {Set<string>} Held layer keys (r=low, l=gap, j=high). */
+const layersHeld = new Set();
+
+/** True when a note was played while layer j was held (suppress B4 on j keyup). */
+let jLayerUsed = false;
+
+/** Layer keys: r never maps to a note; l/j also used as classic/layer notes. */
+const LAYER_KEYS = new Set(["r", "l", "j"]);
 
 /** @type {Record<string, { notes: string[], times: number[] }>} */
 let songs = {
@@ -303,33 +312,21 @@ function parsePhrasesFromBlock(block) {
   return parsed;
 }
 
-/** @param {string[]} mods */
-function modsKey(mods) {
-  return [...mods].sort().join("+");
+/** @returns {string | null} */
+function activeLayer() {
+  if (layersHeld.has("j")) return "j";
+  if (layersHeld.has("l")) return "l";
+  if (layersHeld.has("r")) return "r";
+  return null;
 }
 
-/** @param {KeyboardEvent} event */
-function modsFromEvent(event) {
-  const mods = [];
-  if (event.ctrlKey) mods.push("control");
-  if (event.altKey) mods.push("alt");
-  if (event.shiftKey) mods.push("shift");
-  return mods;
-}
-
-/** @param {KeyboardEvent} event */
-function hasModifiers(event) {
-  return event.ctrlKey || event.altKey || event.shiftKey;
-}
-
-/** @param {string[]} mods @param {string} key */
-function formatModHint(mods, key) {
-  const symbols = { shift: "⇧", control: "⌃", alt: "⌥" };
-  const prefix = [...mods]
-    .sort()
-    .map((m) => symbols[m] ?? m)
-    .join("");
-  return prefix + key.toUpperCase();
+/** @param {string} layer @param {string} key */
+function findLayeredNote(layer, key) {
+  const keyLower = key.length === 1 ? key.toLowerCase() : key;
+  const keyUpper = key.length === 1 ? key.toUpperCase() : key;
+  return extendedKeymap.find(
+    (e) => e.layer === layer && (e.key === keyLower || e.key === keyUpper)
+  );
 }
 
 /**
@@ -465,7 +462,7 @@ function buildNoteToKeyHint() {
     noteToKeyHint.set(entry.note, entry.primaryKey.toUpperCase());
   }
   for (const entry of extendedKeymap) {
-    const hint = formatModHint(entry.mods, entry.key);
+    const hint = entry.key.toUpperCase();
     noteToExtendedHint.set(entry.note, hint);
     if (!noteToKeyHint.has(entry.note)) {
       noteToKeyHint.set(entry.note, hint);
@@ -856,11 +853,9 @@ function createKeyButton(noteId, kind, mappedByNote, afterWhiteIndex) {
   }
 
   const hintText = entry
-    ? entry.primaryKey
+    ? entry.primaryKey.toUpperCase()
     : extHint ?? "";
-  const hintClass = entry
-    ? "key-hint coverable"
-    : "key-hint key-hint-extended coverable";
+  const hintClass = "key-hint coverable";
   const keyHintHtml = hintText
     ? `<span class="${hintClass}">${hintText}</span>`
     : "";
@@ -960,28 +955,24 @@ function buildMacKeyboardGuide() {
     extGuide.innerHTML = "";
     const heading = document.createElement("h3");
     heading.className = "coverable";
-    heading.textContent = "Full 88 keys — octave layers (same note keys)";
+    heading.textContent = "Full 88 keys — letter rows + layers";
     extGuide.appendChild(heading);
     const table = document.createElement("table");
     table.className = "extended-layers-table coverable";
     table.innerHTML = `
-      <thead><tr><th>Layer</th><th>Web (hold)</th><th>Terminal</th><th>Range</th></tr></thead>
+      <thead><tr><th>Band</th><th>Web</th><th>Terminal</th><th>Notes</th></tr></thead>
       <tbody>
-        <tr><td>Classic</td><td><em>none</em></td><td>direct key</td><td>G3–C5 (songs)</td></tr>
-        <tr><td>low2</td><td>⌃⌥</td><td>\\ then <kbd>a</kbd></td><td>≈ A0–C2</td></tr>
-        <tr><td>low1</td><td>⌥</td><td>\\ then <kbd>s</kbd></td><td>≈ C#2–C3</td></tr>
-        <tr><td>down</td><td>⌃</td><td>\\ then <kbd>d</kbd></td><td>≈ C#3–F3</td></tr>
-        <tr><td>up</td><td>⇧</td><td>\\ then <kbd>g</kbd></td><td>≈ C#5–C6</td></tr>
-        <tr><td>high1</td><td>⇧⌥</td><td>\\ then <kbd>h</kbd></td><td>≈ C#6–C7</td></tr>
-        <tr><td>high2</td><td>⇧⌃</td><td>\\ then <kbd>j</kbd></td><td>≈ C#7–C8</td></tr>
-        <tr><td>A#0</td><td>⇧⌃⌥ + <kbd>U</kbd></td><td>\\ <kbd>u</kbd> <kbd>U</kbd></td><td>A#0 only</td></tr>
+        <tr><td>Classic</td><td>press key</td><td>direct</td><td>G3–C5 (Z X N, W E T Y U, A–K)</td></tr>
+        <tr><td>Low</td><td>hold <kbd>r</kbd> + letter</td><td>\\ <kbd>r</kbd> + letter</td><td>A0–F♯3 (all rows)</td></tr>
+        <tr><td>Gap</td><td>hold <kbd>l</kbd> + <kbd>i</kbd>/<kbd>I</kbd></td><td>\\ <kbd>l</kbd> <kbd>i</kbd></td><td>G♯3, A♯3</td></tr>
+        <tr><td>High</td><td>hold <kbd>j</kbd> + letter</td><td>\\ <kbd>j</kbd> + letter</td><td>C♯5–C8 (top row + more)</td></tr>
       </tbody>
     `;
     extGuide.appendChild(table);
     const note = document.createElement("p");
     note.className = "extended-layers-note coverable";
     note.textContent =
-      "Extended layers use the same note keys (Z X N, W E T Y U, A–K). Example: Shift+K = C6, Ctrl+Alt+X = A0.";
+      "Piano keys show note names only. Tap j alone for B4; tap j then another key within half a second for high notes. Uppercase letters are sharps in low/high bands.";
     extGuide.appendChild(note);
   }
 }
@@ -1287,7 +1278,7 @@ function updateKeyHints() {
     .map((e) => `[${e.primaryKey.toUpperCase()}]=${noteLabel(e.note)}`)
     .join("  ");
   const extended =
-    "88-key layers: ⌃⌥ low2 | ⌥ low1 | ⌃ down | ⇧ up | ⇧⌥ high1 | ⇧⌃ high2 | ⇧⌃⌥U=A#0";
+    "88 keys: hold [R] low A0–F#3 | [L]+I gap | [J] high C#5–C8 (or \\ r/l/j in terminal)";
   const shortcuts =
     "Phrase keys (selected song): [B][C][I][O][P][V]  |  Full songs: Twinkle [R], Christmas [M], Ducks [L], Bridge [B], Oysya [O], Golden [N], Takedown [P]  |  Black keys [W][E][T][Y][U]";
   const full = `${mapped}  |  ${extended}  |  ${shortcuts}`;
@@ -1299,23 +1290,62 @@ function findPhraseKeyIndex(meta, key) {
   return meta.phraseKeys.indexOf(key);
 }
 
+function handleLayerKeyup(event) {
+  const key = event.key;
+  if (key.length !== 1) return;
+  const lower = key.toLowerCase();
+  if (lower === "j" && layersHeld.has("j")) {
+    if (!jLayerUsed) {
+      const entry = keymap.find((e) => e.primaryKey === "j");
+      if (entry) {
+        unlockAudio();
+        playNote(entry.note, noteToKeyEl.get(entry.note) ?? null);
+      }
+    }
+    layersHeld.delete("j");
+    jLayerUsed = false;
+    return;
+  }
+  if (LAYER_KEYS.has(lower)) {
+    layersHeld.delete(lower);
+  }
+}
+
 function handleKeydown(event) {
   if (event.repeat) return;
   const key = event.key;
+  const lower = key.length === 1 ? key.toLowerCase() : "";
 
-  if (hasModifiers(event)) {
-    const keyLower = key.length === 1 ? key.toLowerCase() : key;
-    const modKey = modsKey(modsFromEvent(event));
-    const ext = extendedKeymap.find(
-      (e) => e.key === keyLower && modsKey(e.mods) === modKey
-    );
+  if (lower && LAYER_KEYS.has(lower)) {
+    if (lower === "j" && layersHeld.has("j")) {
+      const ext = findLayeredNote("j", key);
+      if (ext) {
+        event.preventDefault();
+        jLayerUsed = true;
+        unlockAudio();
+        playNote(ext.note, noteToKeyEl.get(ext.note) ?? null);
+        return;
+      }
+    }
+    event.preventDefault();
+    layersHeld.add(lower);
+    if (lower === "j") jLayerUsed = false;
+    return;
+  }
+
+  const layer = activeLayer();
+  if (layer && key.length === 1) {
+    const ext = findLayeredNote(layer, key);
     if (ext) {
       event.preventDefault();
+      if (layer === "j") jLayerUsed = true;
       unlockAudio();
       playNote(ext.note, noteToKeyEl.get(ext.note) ?? null);
       return;
     }
   }
+
+  if (layersHeld.size > 0) return;
 
   const entry = keymap.find(
     (e) =>
@@ -1461,6 +1491,7 @@ async function init() {
     scrollPianoToMiddleC();
 
     window.addEventListener("keydown", handleKeydown);
+    window.addEventListener("keyup", handleLayerKeyup);
 
     document.body.addEventListener("click", () => unlockAudio(), {
       once: true,
