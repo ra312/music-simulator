@@ -57,7 +57,7 @@ python3 -m http.server 8080
 
 Open [http://localhost:8080/web/](http://localhost:8080/web/)
 
-The page shows a **Mac keyboard map** (classic two rows for songs) plus a **layer table** for the full range, and a **scrollable 88-key piano** (A0–C8). **Choose a song** from the picker below the piano — only that song’s phrase cards and melody notes are shown (your last choice is remembered for the session). Click or tap any key, or use the computer keyboard (see table above). Piano keys show note names; optional single-letter hints when uncovered. **Cover keys** hides hints on both the Mac guide and the piano; **Practice** on a phrase hides hints on phrase cards too.
+The page shows a **Mac keyboard guide** (mini QWERTY layout, Key/Note/Play tables, and octave layer cards) plus a **scrollable 88-key piano** (A0–C8). **Choose a song** from the dropdown below the piano — only that song’s phrase cards are shown (your last choice is remembered in session storage). Click or tap any key, or use the computer keyboard. Piano keys show note names; optional single-letter hints when uncovered. **Cover keys** hides hints on the Mac guide and piano; **Practice** on a phrase hides hints on phrase cards too.
 
 ## Host online for free
 

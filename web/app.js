@@ -878,19 +878,19 @@ function createKeyButton(noteId, kind, mappedByNote, afterWhiteIndex) {
   return btn;
 }
 
-/** Mac two-row layout (low → high). Gaps match real keyboard (no R black key). */
+/** Mac letter rows for song range (G3–C5). Gaps match real keyboard (no R black key). */
 const MAC_KEYBOARD_LAYOUT = {
   black: [
-    { key: "W", note: "C#4", twin: true },
-    { key: "E", note: "D#4", twin: true },
-    { gap: true, label: "R", hint: "no black key (E–F gap)" },
+    { key: "W", note: "C#4" },
+    { key: "E", note: "D#4" },
+    { gap: true, label: "R" },
     { key: "T", note: "F#4" },
     { key: "Y", note: "G#4" },
     { key: "U", note: "A#4" },
   ],
   white: [
     { key: "Z", note: "G3", low: true },
-    { key: "A", note: "C4", frontDoor: true },
+    { key: "A", note: "C4", middleC: true },
     { key: "S", note: "D4" },
     { key: "D", note: "E4" },
     { key: "F", note: "F4" },
@@ -902,78 +902,241 @@ const MAC_KEYBOARD_LAYOUT = {
   ],
 };
 
-function buildMacKeyboardGuide() {
-  const container = document.getElementById("mac-keys-visual");
-  if (!container) return;
+/** Mini QWERTY rows for the visual (blank = spacer). */
+const MAC_MINI_ROWS = [
+  {
+    label: "Top row — black keys (sharps)",
+    kind: "black",
+    keys: [
+      { blank: true, span: 2 },
+      { key: "W", note: "C#4", kind: "black" },
+      { key: "E", note: "D#4", kind: "black" },
+      { blank: true, label: "R", hint: "gap", span: 1 },
+      { key: "T", note: "F#4", kind: "black" },
+      { key: "Y", note: "G#4", kind: "black" },
+      { key: "U", note: "A#4", kind: "black" },
+    ],
+  },
+  {
+    label: "Home row — white keys",
+    kind: "white",
+    keys: [
+      { key: "A", note: "C4", kind: "white", middleC: true },
+      { key: "S", note: "D4", kind: "white" },
+      { key: "D", note: "E4", kind: "white" },
+      { key: "F", note: "F4", kind: "white" },
+      { key: "G", note: "G4", kind: "white" },
+      { key: "H", note: "A4", kind: "white" },
+      { key: "J", note: "B4", kind: "white" },
+      { key: "K", note: "C5", kind: "white" },
+    ],
+  },
+  {
+    label: "Bottom row — low white keys",
+    kind: "white",
+    keys: [
+      { key: "Z", note: "G3", kind: "white", low: true },
+      { blank: true, span: 6 },
+      { key: "N", note: "B3", kind: "white", low: true },
+    ],
+  },
+];
 
-  container.innerHTML = "";
-  const keyByNote = new Map(keymap.map((e) => [e.note, e]));
+const MAC_LAYER_CARDS = [
+  {
+    id: "classic",
+    title: "Classic",
+    hold: "—",
+    range: "G3–C5",
+    detail: "Z X N · W E T Y U · A–K",
+  },
+  {
+    id: "low",
+    title: "Low",
+    hold: "r",
+    range: "A0–F♯3",
+    detail: "Hold r + any letter row",
+  },
+  {
+    id: "gap",
+    title: "Gap",
+    hold: "l + i",
+    range: "G♯3, A♯3",
+    detail: "Hold l, then i or I",
+  },
+  {
+    id: "high",
+    title: "High",
+    hold: "j",
+    range: "C♯5–C8",
+    detail: "Hold j + letter; j alone = B4",
+  },
+];
 
-  function makeRow(rowType, slots, rowLabel) {
-    const row = document.createElement("div");
-    row.className = `mac-row mac-row-${rowType}`;
-    row.setAttribute("role", "list");
-    row.setAttribute("aria-label", rowLabel);
+function macMapPlayButton(noteId) {
+  const btn = document.createElement("button");
+  btn.type = "button";
+  btn.className = "mac-map-play";
+  btn.textContent = "▶";
+  btn.title = `Play ${noteLabel(noteId)}`;
+  btn.setAttribute("aria-label", `Play ${noteLabel(noteId)}`);
+  btn.addEventListener("click", () => {
+    unlockAudio();
+    playNote(noteId, noteToKeyEl.get(noteId) ?? null);
+  });
+  return btn;
+}
 
-    for (const slot of slots) {
-      if (slot.gap) {
-        const gap = document.createElement("div");
-        gap.className = "mac-key mac-gap";
-        gap.innerHTML = `<span class="mac-key-cap">${slot.label}</span><span class="mac-key-sub">${slot.hint ?? ""}</span>`;
-        row.appendChild(gap);
-        continue;
-      }
+function buildMacMapTable(title, rows, keyByNote) {
+  const wrap = document.createElement("div");
+  wrap.className = "mac-map-table-wrap";
 
-      const entry = keyByNote.get(slot.note);
-      const el = document.createElement("div");
-      el.className = "mac-key";
-      if (entry) el.classList.add("mapped");
-      if (slot.twin) el.classList.add("twin-tower");
-      if (slot.frontDoor) el.classList.add("front-door");
-      if (slot.low) el.classList.add("low-note");
+  const heading = document.createElement("h3");
+  heading.textContent = title;
+  wrap.appendChild(heading);
 
-      const cap = slot.key;
-      const sub = entry ? noteLabel(slot.note) : slot.note ?? "";
-      el.innerHTML = `
-        <span class="mac-key-cap coverable">${cap}</span>
-        <span class="mac-key-sub coverable">${sub}</span>
-      `;
-      row.appendChild(el);
-    }
-    return row;
+  const table = document.createElement("table");
+  table.className = "mac-map-table";
+  table.innerHTML =
+    "<thead><tr><th>Key</th><th>Note</th><th>Play</th></tr></thead>";
+  const tbody = document.createElement("tbody");
+
+  for (const slot of rows) {
+    if (slot.gap) continue;
+    const entry = keyByNote.get(slot.note);
+    const tr = document.createElement("tr");
+    if (slot.middleC) tr.classList.add("mac-map-middle-c");
+    if (slot.low) tr.classList.add("mac-map-low");
+
+    const keyCell = document.createElement("td");
+    keyCell.innerHTML = `<kbd class="coverable">${slot.key}</kbd>`;
+    tr.appendChild(keyCell);
+
+    const noteCell = document.createElement("td");
+    noteCell.className = "coverable";
+    noteCell.textContent = entry ? noteLabel(slot.note) : slot.note;
+    tr.appendChild(noteCell);
+
+    const playCell = document.createElement("td");
+    if (entry) playCell.appendChild(macMapPlayButton(slot.note));
+    else playCell.textContent = "—";
+    tr.appendChild(playCell);
+
+    tbody.appendChild(tr);
   }
 
-  container.appendChild(
-    makeRow("black", MAC_KEYBOARD_LAYOUT.black, "Top row — black keys (sharps)")
-  );
-  container.appendChild(
-    makeRow("white", MAC_KEYBOARD_LAYOUT.white, "Home row — white keys")
-  );
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  return wrap;
+}
 
-  const extGuide = document.getElementById("mac-extended-guide");
-  if (extGuide) {
-    extGuide.innerHTML = "";
-    const heading = document.createElement("h3");
-    heading.className = "coverable";
-    heading.textContent = "Full 88 keys — letter rows + layers";
-    extGuide.appendChild(heading);
+function buildMacKeyboardGuide() {
+  const keyByNote = new Map(keymap.map((e) => [e.note, e]));
+
+  const mini = document.getElementById("mac-keys-mini");
+  if (mini) {
+    mini.innerHTML = "";
+    for (const rowDef of MAC_MINI_ROWS) {
+      const row = document.createElement("div");
+      row.className = `mac-mini-row mac-mini-row-${rowDef.kind}`;
+      row.setAttribute("aria-label", rowDef.label);
+
+      const label = document.createElement("span");
+      label.className = "mac-mini-row-label";
+      label.textContent = rowDef.label;
+      row.appendChild(label);
+
+      const keys = document.createElement("div");
+      keys.className = "mac-mini-keys";
+
+      for (const slot of rowDef.keys) {
+        if (slot.blank) {
+          const gap = document.createElement("span");
+          gap.className = "mac-mini-key mac-mini-blank";
+          if (slot.span && slot.span > 1) {
+            gap.style.gridColumn = `span ${slot.span}`;
+          }
+          if (slot.label) {
+            gap.textContent = slot.label;
+            gap.title = slot.hint ?? "No black key here (E–F gap)";
+          }
+          keys.appendChild(gap);
+          continue;
+        }
+
+        const entry = keyByNote.get(slot.note);
+        const el = document.createElement("span");
+        el.className = `mac-mini-key mac-mini-${slot.kind}`;
+        if (entry) el.classList.add("mapped");
+        if (slot.middleC) el.classList.add("middle-c");
+        if (slot.low) el.classList.add("low-note");
+
+        const noteText = entry ? noteLabel(slot.note) : slot.note;
+        el.innerHTML = `<span class="mac-mini-cap coverable">${slot.key}</span><span class="mac-mini-note coverable">${noteText}</span>`;
+        keys.appendChild(el);
+      }
+
+      row.appendChild(keys);
+      mini.appendChild(row);
+    }
+  }
+
+  const tablesHost = document.getElementById("mac-guide-tables");
+  if (tablesHost) {
+    tablesHost.innerHTML = "";
+    tablesHost.appendChild(
+      buildMacMapTable(
+        "White keys (home + bottom row)",
+        MAC_KEYBOARD_LAYOUT.white,
+        keyByNote
+      )
+    );
+    tablesHost.appendChild(
+      buildMacMapTable(
+        "Black keys (top row)",
+        MAC_KEYBOARD_LAYOUT.black,
+        keyByNote
+      )
+    );
+  }
+
+  const layersHost = document.getElementById("mac-layer-cards");
+  if (layersHost) {
+    layersHost.innerHTML = "";
+    for (const card of MAC_LAYER_CARDS) {
+      const el = document.createElement("article");
+      el.className = "mac-layer-card coverable";
+      el.dataset.layer = card.id;
+      el.innerHTML = `
+        <h3 class="mac-layer-title">${card.title}</h3>
+        <p class="mac-layer-hold"><span class="mac-layer-label">Hold</span> <kbd>${card.hold}</kbd></p>
+        <p class="mac-layer-range">${card.range}</p>
+        <p class="mac-layer-detail">${card.detail}</p>
+      `;
+      layersHost.appendChild(el);
+    }
+  }
+
+  const detailsBody = document.getElementById("mac-88-details-body");
+  if (detailsBody) {
+    detailsBody.innerHTML = "";
     const table = document.createElement("table");
-    table.className = "extended-layers-table coverable";
+    table.className = "mac-88-table coverable";
     table.innerHTML = `
-      <thead><tr><th>Band</th><th>Web</th><th>Terminal</th><th>Notes</th></tr></thead>
+      <thead><tr><th>Band</th><th>Web</th><th>Terminal</th><th>Range</th></tr></thead>
       <tbody>
-        <tr><td>Classic</td><td>press key</td><td>direct</td><td>G3–C5 (Z X N, W E T Y U, A–K)</td></tr>
-        <tr><td>Low</td><td>hold <kbd>r</kbd> + letter</td><td>\\ <kbd>r</kbd> + letter</td><td>A0–F♯3 (all rows)</td></tr>
-        <tr><td>Gap</td><td>hold <kbd>l</kbd> + <kbd>i</kbd>/<kbd>I</kbd></td><td>\\ <kbd>l</kbd> <kbd>i</kbd></td><td>G♯3, A♯3</td></tr>
-        <tr><td>High</td><td>hold <kbd>j</kbd> + letter</td><td>\\ <kbd>j</kbd> + letter</td><td>C♯5–C8 (top row + more)</td></tr>
+        <tr><td>Classic</td><td>press key</td><td>direct</td><td>G3–C5</td></tr>
+        <tr><td>Low</td><td>hold <kbd>r</kbd> + letter</td><td>\\ <kbd>r</kbd> + letter</td><td>A0–F♯3</td></tr>
+        <tr><td>Gap</td><td>hold <kbd>l</kbd> + <kbd>i</kbd></td><td>\\ <kbd>l</kbd> <kbd>i</kbd></td><td>G♯3, A♯3</td></tr>
+        <tr><td>High</td><td>hold <kbd>j</kbd> + letter</td><td>\\ <kbd>j</kbd> + letter</td><td>C♯5–C8</td></tr>
       </tbody>
     `;
-    extGuide.appendChild(table);
+    detailsBody.appendChild(table);
     const note = document.createElement("p");
-    note.className = "extended-layers-note coverable";
+    note.className = "mac-88-note coverable";
     note.textContent =
-      "Piano keys show note names only. Tap j alone for B4; tap j then another key within half a second for high notes. Uppercase letters are sharps in low/high bands.";
-    extGuide.appendChild(note);
+      "Uppercase letters are sharps in low/high bands. Phrase and full-song keys do not fire while a layer key is held.";
+    detailsBody.appendChild(note);
   }
 }
 
@@ -1237,7 +1400,11 @@ function buildSongPicker(songIds) {
     selectSong(select.value);
   });
 
-  picker.append(label, select, pills);
+  const quickLabel = document.createElement("span");
+  quickLabel.className = "song-picker-quick-label";
+  quickLabel.textContent = "Quick pick";
+
+  picker.append(label, select, quickLabel, pills);
   return picker;
 }
 
