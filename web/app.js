@@ -61,9 +61,22 @@ const { whiteKeys: PIANO_WHITE_KEYS, blackAfterWhite: BLACK_KEY_AFTER_WHITE } =
   build88KeyLayout();
 
 /** @type {Record<string, string>} */
+const SONG_DISPLAY_ORDER = [
+  "twinkle",
+  "xmas",
+  "ducks",
+  "bridge",
+  "oysya",
+  "golden",
+  "takedown",
+];
+
+const SELECTED_SONG_STORAGE_KEY = "music_simulator.selectedSong";
+
 const SONG_META = {
   twinkle: {
     title: "Twinkle Twinkle Little Star",
+    shortTitle: "Twinkle",
     fullKey: "R",
     phraseKeys: ["1", "2", "3", "4", "5", "6"],
     lyrics: [
@@ -77,6 +90,7 @@ const SONG_META = {
   },
   xmas: {
     title: "We Wish You a Merry Christmas",
+    shortTitle: "Christmas",
     fullKey: "M",
     phraseKeys: ["7", "8", "9", "0", "-", "="],
     lyrics: [
@@ -90,6 +104,7 @@ const SONG_META = {
   },
   ducks: {
     title: "Five Little Ducks",
+    shortTitle: "Ducks",
     fullKey: "L",
     phraseKeys: [",", ".", "/", ";", "[", "]"],
     lyrics: [
@@ -103,6 +118,7 @@ const SONG_META = {
   },
   bridge: {
     title: "London Bridge Is Falling Down",
+    shortTitle: "Bridge",
     fullKey: "!",
     phraseKeys: ["i", "o", "p", "v"],
     lyrics: [
@@ -114,6 +130,7 @@ const SONG_META = {
   },
   oysya: {
     title: "Ойся ты ойся (Oysya ty oysya)",
+    shortTitle: "Oysya",
     fullKey: "&",
     phraseKeys: ["?", "@", "#", "$", "%", "^"],
     lyrics: [
@@ -127,6 +144,7 @@ const SONG_META = {
   },
   golden: {
     title: "Golden (HUNTR/X / Huntrix)",
+    shortTitle: "Golden",
     fullKey: "|",
     phraseKeys: [" ", "`", "(", ")", "'", '"'],
     lyrics: [
@@ -136,6 +154,20 @@ const SONG_META = {
       "glowin'",
       "golden",
       "up with our voices",
+    ],
+  },
+  takedown: {
+    title: "Takedown (KPop Demon Hunters)",
+    shortTitle: "Takedown",
+    fullKey: "_",
+    phraseKeys: ["b", "c", "~", "+", "_", "*"],
+    lyrics: [
+      "Takedown, takedown",
+      "Takedown, down, down, down",
+      "I don't think you're ready for the takedown",
+      "Woah-oh, da-da-da, down",
+      "So sweet, so easy on the eyes",
+      "Ima gear up and take you down",
     ],
   },
 };
@@ -157,6 +189,7 @@ let songs = {
   bridge: {},
   oysya: {},
   golden: {},
+  takedown: {},
 };
 
 /** @type {Record<string, number>} */
@@ -167,6 +200,7 @@ let songPhraseGap = {
   bridge: 0.12,
   oysya: 0.12,
   golden: 0.12,
+  takedown: 0.12,
 };
 
 /** @type {Map<string, HTMLElement>} */
@@ -350,7 +384,10 @@ export function parsePianoSh(text) {
     /PLAY_OYSYA_PHRASE\(\)[\s\S]*?(?=\nPLAY_OYSYA\(\)|\nPLAY_GOLDEN_PHRASE)/
   );
   const goldenBlock = text.match(
-    /PLAY_GOLDEN_PHRASE\(\)[\s\S]*?(?=\nPLAY_GOLDEN\(\)|\n# EXTENDED_KEYMAP_BEGIN)/
+    /PLAY_GOLDEN_PHRASE\(\)[\s\S]*?(?=\nPLAY_GOLDEN\(\)|\nPLAY_TAKEDOWN_PHRASE)/
+  );
+  const takedownBlock = text.match(
+    /PLAY_TAKEDOWN_PHRASE\(\)[\s\S]*?(?=\nPLAY_TAKEDOWN\(\)|\n# EXTENDED_KEYMAP_BEGIN)/
   );
   const parsedExtended = parseExtendedKeymap(text);
 
@@ -360,6 +397,7 @@ export function parsePianoSh(text) {
   if (!bridgeBlock) throw new Error("PLAY_BRIDGE_PHRASE not found in piano.sh");
   if (!oysyaBlock) throw new Error("PLAY_OYSYA_PHRASE not found in piano.sh");
   if (!goldenBlock) throw new Error("PLAY_GOLDEN_PHRASE not found in piano.sh");
+  if (!takedownBlock) throw new Error("PLAY_TAKEDOWN_PHRASE not found in piano.sh");
 
   const twinklePhrases = parsePhrasesFromBlock(twinkleBlock[0]);
   const xmasPhrases = parsePhrasesFromBlock(xmasBlock[0]);
@@ -367,6 +405,7 @@ export function parsePianoSh(text) {
   const bridgePhrases = parsePhrasesFromBlock(bridgeBlock[0]);
   const oysyaPhrases = parsePhrasesFromBlock(oysyaBlock[0]);
   const goldenPhrases = parsePhrasesFromBlock(goldenBlock[0]);
+  const takedownPhrases = parsePhrasesFromBlock(takedownBlock[0]);
 
   if (Object.keys(bridgePhrases).length === 0) {
     throw new Error("No London Bridge phrases found in piano.sh");
@@ -377,6 +416,9 @@ export function parsePianoSh(text) {
   if (Object.keys(goldenPhrases).length === 0) {
     throw new Error("No Golden phrases found in piano.sh");
   }
+  if (Object.keys(takedownPhrases).length === 0) {
+    throw new Error("No Takedown phrases found in piano.sh");
+  }
 
   const twinkleGap = text.match(/PLAY_TWINKLE\(\)[\s\S]*?sleep\s+([\d.]+)/);
   const xmasGap = text.match(/PLAY_XMAS\(\)[\s\S]*?sleep\s+([\d.]+)/);
@@ -384,6 +426,7 @@ export function parsePianoSh(text) {
   const bridgeGap = text.match(/PLAY_BRIDGE\(\)[\s\S]*?sleep\s+([\d.]+)/);
   const oysyaGap = text.match(/PLAY_OYSYA\(\)[\s\S]*?sleep\s+([\d.]+)/);
   const goldenGap = text.match(/PLAY_GOLDEN\(\)[\s\S]*?sleep\s+([\d.]+)/);
+  const takedownGap = text.match(/PLAY_TAKEDOWN\(\)[\s\S]*?sleep\s+([\d.]+)/);
 
   return {
     keymap: parsedKeymap,
@@ -395,6 +438,7 @@ export function parsePianoSh(text) {
       bridge: bridgePhrases,
       oysya: oysyaPhrases,
       golden: goldenPhrases,
+      takedown: takedownPhrases,
     },
     songPhraseGap: {
       twinkle: twinkleGap ? parseFloat(twinkleGap[1]) : 0.12,
@@ -403,6 +447,7 @@ export function parsePianoSh(text) {
       bridge: bridgeGap ? parseFloat(bridgeGap[1]) : 0.12,
       oysya: oysyaGap ? parseFloat(oysyaGap[1]) : 0.12,
       golden: goldenGap ? parseFloat(goldenGap[1]) : 0.12,
+      takedown: takedownGap ? parseFloat(takedownGap[1]) : 0.12,
     },
   };
 }
@@ -1113,6 +1158,7 @@ function buildSongsUI() {
   songsContainer.appendChild(buildSongSection("bridge"));
   songsContainer.appendChild(buildSongSection("oysya"));
   songsContainer.appendChild(buildSongSection("golden"));
+  songsContainer.appendChild(buildSongSection("takedown"));
 }
 
 function updateKeyHints() {
@@ -1122,17 +1168,23 @@ function updateKeyHints() {
   const extended =
     "88-key layers: ⌃⌥ low2 | ⌥ low1 | ⌃ down | ⇧ up | ⇧⌥ high1 | ⇧⌃ high2 | ⇧⌃⌥U=A#0";
   const shortcuts =
-    "Twinkle [1]–[6] [R]  |  Christmas [7][8][9][0][-][=] [M]  |  Ducks [,][.][/][;] [[]] [L]  |  Bridge [I][O][P][V] [!]  |  Oysya [?][@][#][$][%][^] [&]  |  Golden [space][`][(][)]['] [\"] [|]  |  Black keys [W][E][T][Y][U]";
+    "Twinkle [1]–[6] [R]  |  Christmas [7][8][9][0][-][=] [M]  |  Ducks [,][.][/][;] [[]] [L]  |  Bridge [I][O][P][V] [!]  |  Oysya [?][@][#][$][%][^] [&]  |  Golden [space][`][(][)]['] [\"] [|]  |  Takedown [b][B][c][C][~][+] [_]  |  Black keys [W][E][T][Y][U]";
   const full = `${mapped}  |  ${extended}  |  ${shortcuts}`;
   keyHintsEl.textContent = full;
   keyHintsEl.dataset.fullHints = full;
 }
 
 function findPhraseKeyIndex(meta, key) {
+  const exact = meta.phraseKeys.indexOf(key);
+  if (exact !== -1) return exact;
   const lower = key.toLowerCase();
-  return meta.phraseKeys.findIndex(
-    (k) => k === key || k === lower || k.toUpperCase() === key.toUpperCase()
+  const caseInsensitiveIdx = meta.phraseKeys.findIndex((k) => k === lower);
+  if (caseInsensitiveIdx === -1) return -1;
+  const hasCasePair = meta.phraseKeys.some(
+    (k) => k !== lower && k.toLowerCase() === lower
   );
+  if (hasCasePair) return -1;
+  return caseInsensitiveIdx;
 }
 
 function handleKeydown(event) {
@@ -1226,6 +1278,16 @@ function handleKeydown(event) {
     return;
   }
 
+  if (key === "_") {
+    event.preventDefault();
+    unlockAudio();
+    playFullSong(
+      "takedown",
+      songsContainer.querySelector('.btn-song-full[data-song="takedown"]')
+    );
+    return;
+  }
+
   for (const songId of [
     "twinkle",
     "xmas",
@@ -1233,6 +1295,7 @@ function handleKeydown(event) {
     "bridge",
     "oysya",
     "golden",
+    "takedown",
   ]) {
     const meta = SONG_META[songId];
     const idx = findPhraseKeyIndex(meta, key);

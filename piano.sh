@@ -195,6 +195,37 @@ PLAY_GOLDEN() {
     done
 }
 
+# Play one phrase of Takedown (HUNTR/X / KPop Demon Hunters) — hook simplified, 6 phrases
+PLAY_TAKEDOWN_PHRASE() {
+    local notes=() times=()
+    case "$1" in
+        1) notes=(C#4 G#4 C#4 G#4)
+           times=(0.45 0.45 0.45 0.9) ;;
+        2) notes=(A4 G#4 G#4 F#4 G#4)
+           times=(0.45 0.45 0.45 0.45 0.9) ;;
+        3) notes=(B4 G#4 B4 G#4 B4 G#4 B4 G#4 C#4 G#4)
+           times=(0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.9) ;;
+        4) notes=(C#4 G#4 C#4 G#4 A4 A4 F#4 G#4)
+           times=(0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.9) ;;
+        5) notes=(C#4 C#4 C#4 D#4 C#4 C#4 C#4)
+           times=(0.45 0.45 0.45 0.45 0.45 0.45 0.9) ;;
+        6) notes=(G#4 G#4 C#4 F#4 F#4 F#4)
+           times=(0.45 0.45 0.45 0.45 0.45 0.9) ;;
+        *) return 1 ;;
+    esac
+    for i in "${!notes[@]}"; do
+        PLAY_NOTE "${notes[i]}"
+        sleep "${times[i]}"
+    done
+}
+
+PLAY_TAKEDOWN() {
+    for p in 1 2 3 4 5 6; do
+        PLAY_TAKEDOWN_PHRASE "$p"
+        sleep 0.12
+    done
+}
+
 # --- Full 88-key range (A0–C8): octave layers on classic keys ---
 # Web: hold modifier(s) + note key. Terminal: \\ then layer letter then note key.
 #   Layer │ Web modifiers        │ Bash \\+ │ Offset
@@ -448,6 +479,28 @@ cat <<'EOF'
    ["] E E G T E D D A     up with our voices
        D D G T D S S X
 
+ ── Takedown (HUNTR/X) — play along with keys ──
+
+   [b] W Y W Y           Takedown, takedown
+       W U W U
+
+   [B] H Y Y T Y         Takedown, down, down, down
+       H U U F U
+
+   [c] J Y J Y J Y J Y W Y   I don't think you're ready for the takedown
+       J U J U J U J U W U
+
+   [C] W Y W Y H H T Y   Woah-oh, da-da-da, down
+       W U W U H H F U
+
+   [~] W W W E W W W     So sweet, so easy on the eyes
+       W W W D W W W
+
+   [+] Y Y W T T T       Ima gear up and take you down
+       U U W F F F
+
+   [_] play full Takedown (all phrases)
+
    [Q] = quit
 ==========================================
 EOF
@@ -511,6 +564,13 @@ while true; do
         \'|') PLAY_GOLDEN_PHRASE 5 ;;
         \"|") PLAY_GOLDEN_PHRASE 6 ;;
         \|'|`) PLAY_GOLDEN ;;
+        b) PLAY_TAKEDOWN_PHRASE 1 ;;
+        B) PLAY_TAKEDOWN_PHRASE 2 ;;
+        c) PLAY_TAKEDOWN_PHRASE 3 ;;
+        C) PLAY_TAKEDOWN_PHRASE 4 ;;
+        ~) PLAY_TAKEDOWN_PHRASE 5 ;;
+        +) PLAY_TAKEDOWN_PHRASE 6 ;;
+        _|_) PLAY_TAKEDOWN ;;
         \\)
             read -r -s -n 1 layer
             read -r -s -n 1 nk
