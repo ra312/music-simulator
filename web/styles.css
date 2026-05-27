@@ -743,6 +743,70 @@ body.cover-keys #key-hints-covered {
   font-weight: 600;
 }
 
+/* Golden (HUNTR/X) — notes-first preview */
+
+.song-golden .note-row.note-names {
+  font-size: 1rem;
+  margin-top: 0.5rem;
+}
+
+.song-golden .note-row.note-names .row-label {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.song-golden .note-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.45rem;
+  letter-spacing: 0;
+  word-spacing: normal;
+}
+
+.note-chip {
+  display: inline-block;
+  padding: 0.2rem 0.5rem;
+  background: var(--surface-2);
+  border: 1px solid var(--key-border);
+  border-radius: 5px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    transform 0.15s,
+    box-shadow 0.15s;
+}
+
+.note-chip.preview-current {
+  border-color: var(--accent);
+  background: rgba(187, 154, 247, 0.2);
+  color: #e0cfff;
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(187, 154, 247, 0.35);
+}
+
+.phrase-card.preview-active {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 4px 24px rgba(187, 154, 247, 0.2);
+}
+
+.piano-key.preview-highlight {
+  z-index: 5;
+}
+
+.piano-key.white.preview-highlight {
+  background: linear-gradient(180deg, #e8d5ff 0%, #bb9af7 55%, #9d7cd8 100%);
+  border-color: var(--accent);
+}
+
+.piano-key.black.preview-highlight {
+  background: linear-gradient(180deg, #6b5b95 0%, #bb9af7 100%);
+  border-color: #c4a7e7;
+}
+
 .btn-practice {
   border: 1px solid var(--practice);
   background: transparent;

@@ -184,6 +184,9 @@ const noteFreqCache = new Map();
 /** @type {number[]} */
 let phraseTimeouts = [];
 
+/** Golden: silent note-by-note preview before audio (ms per note). */
+const GOLDEN_PREVIEW_NOTE_MS = 400;
+
 let coverKeysEnabled = false;
 let showAllNoteLabels = false;
 
@@ -429,6 +432,171 @@ function notesToNameRow(notes) {
   return notes.map((n) => noteLabel(n)).join(" ");
 }
 
+/** @param {string[]} notes */
+function notesToChipsHtml(notes) {
+  return notes
+    .map(
+      (n) =>
+        `<span class="note-chip" data-note="${n}">${noteLabel(n)}</span>`
+    )
+    .join("");
+}
+
+function usesNotesFirstPreview(songId) {
+  return songId === "golden";
+}
+
+function clearNotePreview() {
+  document
+    .querySelectorAll(".note-chip.preview-current")
+    .forEach((el) => el.classList.remove("preview-current"));
+  document
+    .querySelectorAll(".piano-key.preview-highlight")
+    .forEach((el) => el.classList.remove("preview-highlight"));
+  document
+    .querySelectorAll(".phrase-card.preview-active")
+    .forEach((el) => el.classList.remove("preview-active"));
+}
+
+function scrollKeyIntoView(keyEl) {
+  if (!pianoScrollEl || !keyEl) return;
+  const scrollLeft =
+    keyEl.offsetLeft -
+    pianoScrollEl.clientWidth / 2 +
+    keyEl.offsetWidth / 2;
+  pianoScrollEl.scrollLeft = Math.max(0, scrollLeft);
+}
+
+/**
+ * @param {string} noteId
+ * @param {Element | null | undefined} chipEl
+ */
+function flashNotePreview(noteId, chipEl) {
+  document
+    .querySelectorAll(".note-chip.preview-current")
+    .forEach((el) => el.classList.remove("preview-current"));
+  document
+    .querySelectorAll(".piano-key.preview-highlight")
+    .forEach((el) => el.classList.remove("preview-highlight"));
+
+  chipEl?.classList.add("preview-current");
+  const keyEl = findKeyElForNote(noteId);
+  if (keyEl) {
+    keyEl.classList.add("preview-highlight");
+    scrollKeyIntoView(keyEl);
+  }
+}
+
+/**
+ * @param {string} songId
+ * @param {number} phraseNum
+ * @param {() => void} [onComplete]
+ */
+function previewPhraseNotes(songId, phraseNum, onComplete) {
+  const phrase = songs[songId]?.[String(phraseNum)];
+  if (!phrase) {
+    onComplete?.();
+    return;
+  }
+
+  const card = songsContainer.querySelector(
+    `.phrase-card[data-song="${songId}"][data-phrase="${phraseNum}"]`
+  );
+  card?.classList.add("preview-active");
+  card?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  const chips = card?.querySelectorAll(".note-chip") ?? [];
+
+  let delayMs = 0;
+  for (let i = 0; i < phrase.notes.length; i++) {
+    const noteId = phrase.notes[i];
+    const chip = chips[i] ?? null;
+    const id = window.setTimeout(
+      () => flashNotePreview(noteId, chip),
+      delayMs
+    );
+    phraseTimeouts.push(id);
+    delayMs += GOLDEN_PREVIEW_NOTE_MS;
+  }
+
+  const doneId = window.setTimeout(() => {
+    card?.classList.remove("preview-active");
+    clearNotePreview();
+    onComplete?.();
+  }, delayMs + 150);
+  phraseTimeouts.push(doneId);
+}
+
+/**
+ * @param {string} songId
+ * @param {number} phraseNum
+ * @param {HTMLElement | null} [activeBtn]
+ */
+function playPhraseNotesFirst(songId, phraseNum, activeBtn = null) {
+  const phrase = songs[songId]?.[String(phraseNum)];
+  if (!phrase) return;
+
+  clearPhraseTimeouts();
+  if (activeBtn) activeBtn.classList.add("active");
+
+  previewPhraseNotes(songId, phraseNum, () => {
+    playPhrase(songId, phraseNum, activeBtn);
+  });
+}
+
+/**
+ * @param {string} songId
+ * @param {HTMLElement | null} [activeBtn]
+ */
+function playFullSongNotesFirst(songId, activeBtn = null) {
+  const phraseMap = songs[songId];
+  if (!phraseMap) return;
+
+  clearPhraseTimeouts();
+  if (activeBtn) activeBtn.classList.add("active");
+
+  const phraseNums = Object.keys(phraseMap)
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  function previewNext(idx) {
+    if (idx >= phraseNums.length) {
+      playFullSong(songId, activeBtn);
+      return;
+    }
+    previewPhraseNotes(songId, phraseNums[idx], () =>
+      previewNext(idx + 1)
+    );
+  }
+
+  previewNext(0);
+}
+
+/**
+ * @param {string} songId
+ * @param {number} phraseNum
+ * @param {HTMLElement | null} [activeBtn]
+ */
+function triggerPhrasePlay(songId, phraseNum, activeBtn = null) {
+  if (usesNotesFirstPreview(songId)) {
+    playPhraseNotesFirst(songId, phraseNum, activeBtn);
+  } else {
+    playPhrase(songId, phraseNum, activeBtn);
+  }
+}
+
+/**
+ * @param {string} songId
+ * @param {HTMLElement | null} [activeBtn]
+ */
+function triggerFullSongPlay(songId, activeBtn = null) {
+  if (usesNotesFirstPreview(songId)) {
+    playFullSongNotesFirst(songId, activeBtn);
+  } else {
+    playFullSong(songId, activeBtn);
+  }
+}
+
 function setCoverKeys(enabled) {
   coverKeysEnabled = enabled;
   document.body.classList.toggle("cover-keys", enabled);
@@ -557,6 +725,7 @@ function clearPhraseTimeouts() {
     clearTimeout(id);
   }
   phraseTimeouts = [];
+  clearNotePreview();
   document
     .querySelectorAll(".phrase-btn.active, .btn-song-full.active")
     .forEach((el) => el.classList.remove("active"));
@@ -826,6 +995,7 @@ function buildSongSection(songId) {
   const phraseMap = songs[songId];
   const section = document.createElement("section");
   section.className = "song-section";
+  if (songId === "golden") section.classList.add("song-golden");
   section.dataset.song = songId;
 
   const heading = document.createElement("h2");
@@ -834,7 +1004,10 @@ function buildSongSection(songId) {
 
   const hint = document.createElement("p");
   hint.className = "song-hint";
-  hint.textContent = `Play along using the Notes row (pitch names). Use Practice on a phrase to hide key hints. Auto-play with the Play button or [${meta.phraseKeys.join("] [")}] / full song [${meta.fullKey}].`;
+  hint.textContent =
+    songId === "golden"
+      ? `Notes preview, then play — each phrase highlights note names on the piano (silent), then plays audio. Play along with the Notes row. Practice hides key hints. [${meta.phraseKeys.join("] [")}] / full song [${meta.fullKey}].`
+      : `Play along using the Notes row (pitch names). Use Practice on a phrase to hide key hints. Auto-play with the Play button or [${meta.phraseKeys.join("] [")}] / full song [${meta.fullKey}].`;
   section.appendChild(hint);
 
   const blueprint = document.createElement("div");
@@ -883,10 +1056,13 @@ function buildSongSection(songId) {
     playBtn.dataset.song = songId;
     playBtn.dataset.phrase = String(num);
     playBtn.textContent = `Play [${triggerKey}]`;
-    playBtn.title = `Press ${triggerKey} to auto-play`;
+    playBtn.title =
+      songId === "golden"
+        ? `Press ${triggerKey} — preview notes, then play`
+        : `Press ${triggerKey} to auto-play`;
     playBtn.addEventListener("click", () => {
       unlockAudio();
-      playPhrase(songId, num, playBtn);
+      triggerPhrasePlay(songId, num, playBtn);
     });
     actions.appendChild(playBtn);
 
@@ -895,7 +1071,10 @@ function buildSongSection(songId) {
 
     const rowNotes = document.createElement("div");
     rowNotes.className = "note-row note-names";
-    rowNotes.innerHTML = `<span class="row-label">Notes</span><span class="row-values">${notesToNameRow(phrase.notes)}</span>`;
+    rowNotes.innerHTML =
+      songId === "golden"
+        ? `<span class="row-label">Notes</span><span class="row-values note-chips">${notesToChipsHtml(phrase.notes)}</span>`
+        : `<span class="row-label">Notes</span><span class="row-values">${notesToNameRow(phrase.notes)}</span>`;
     card.appendChild(rowNotes);
 
     const rowKeys = document.createElement("div");
@@ -913,9 +1092,13 @@ function buildSongSection(songId) {
   fullBtn.className = "btn-song-full";
   fullBtn.dataset.song = songId;
   fullBtn.textContent = `Play full song [${meta.fullKey}]`;
+  fullBtn.title =
+    songId === "golden"
+      ? "Preview all phrase notes in order, then play full song"
+      : "Play all phrases in order";
   fullBtn.addEventListener("click", () => {
     unlockAudio();
-    playFullSong(songId, fullBtn);
+    triggerFullSongPlay(songId, fullBtn);
   });
   section.appendChild(fullBtn);
 
@@ -1036,7 +1219,7 @@ function handleKeydown(event) {
   if (key === "|") {
     event.preventDefault();
     unlockAudio();
-    playFullSong(
+    triggerFullSongPlay(
       "golden",
       songsContainer.querySelector('.btn-song-full[data-song="golden"]')
     );
@@ -1063,7 +1246,7 @@ function handleKeydown(event) {
     const btn = songsContainer.querySelector(
       `.phrase-btn[data-song="${songId}"][data-phrase="${phraseNum}"]`
     );
-    playPhrase(songId, phraseNum, btn);
+    triggerPhrasePlay(songId, phraseNum, btn);
     return;
   }
 }
