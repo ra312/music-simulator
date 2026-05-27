@@ -159,7 +159,7 @@ const SONG_META = {
   takedown: {
     title: "Takedown (KPop Demon Hunters)",
     shortTitle: "Takedown",
-    fullKey: "_",
+    fullKey: "*",
     phraseKeys: ["b", "c", "~", "+", "_", "*"],
     lyrics: [
       "Takedown, takedown",
@@ -223,6 +223,12 @@ const GOLDEN_PREVIEW_NOTE_MS = 400;
 
 let coverKeysEnabled = false;
 let showAllNoteLabels = false;
+
+/** @type {string | null} */
+let selectedSongId = null;
+
+/** @type {Map<string, HTMLElement>} */
+const songSectionById = new Map();
 
 /** @type {HTMLElement | null} */
 let practicingCard = null;
@@ -1047,6 +1053,14 @@ function buildSongSection(songId) {
   heading.textContent = meta.title;
   section.appendChild(heading);
 
+  const melodyNotes = getMelodyNotesForSong(songId);
+  if (melodyNotes.length > 0) {
+    const summary = document.createElement("div");
+    summary.className = "melody-summary";
+    summary.innerHTML = `<span class="melody-summary-label">Melody</span><span class="melody-summary-notes">${notesToNameRow(melodyNotes)}</span>`;
+    section.appendChild(summary);
+  }
+
   const hint = document.createElement("p");
   hint.className = "song-hint";
   hint.textContent =
@@ -1150,15 +1164,122 @@ function buildSongSection(songId) {
   return section;
 }
 
+function getAvailableSongIds() {
+  return SONG_DISPLAY_ORDER.filter((id) => {
+    const phraseMap = songs[id];
+    return SONG_META[id] && phraseMap && Object.keys(phraseMap).length > 0;
+  });
+}
+
+/** @param {string} songId */
+function getMelodyNotesForSong(songId) {
+  const phraseMap = songs[songId];
+  if (!phraseMap) return [];
+  return Object.keys(phraseMap)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .flatMap((num) => phraseMap[String(num)].notes);
+}
+
+/** @param {string} songId */
+function selectSong(songId) {
+  if (!songSectionById.has(songId)) return;
+  selectedSongId = songId;
+  sessionStorage.setItem(SELECTED_SONG_STORAGE_KEY, songId);
+
+  for (const [id, section] of songSectionById) {
+    section.hidden = id !== songId;
+  }
+
+  const select = document.getElementById("song-select");
+  if (select && select.value !== songId) {
+    select.value = songId;
+  }
+
+  songsContainer.querySelectorAll(".song-pill").forEach((pill) => {
+    const active = pill.dataset.song === songId;
+    pill.classList.toggle("active", active);
+    pill.setAttribute("aria-selected", active ? "true" : "false");
+  });
+
+  setPracticingCard(null);
+}
+
+/** @param {string[]} songIds */
+function buildSongPicker(songIds) {
+  const picker = document.createElement("div");
+  picker.className = "song-picker";
+
+  const label = document.createElement("label");
+  label.className = "song-picker-label";
+  label.htmlFor = "song-select";
+  label.textContent = "Choose a song";
+
+  const select = document.createElement("select");
+  select.id = "song-select";
+  select.className = "song-select";
+  select.setAttribute("aria-label", "Choose a song");
+
+  const pills = document.createElement("div");
+  pills.className = "song-picker-pills";
+  pills.setAttribute("role", "tablist");
+  pills.setAttribute("aria-label", "Songs");
+
+  for (const id of songIds) {
+    const meta = SONG_META[id];
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = meta.title;
+    select.appendChild(option);
+
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = "song-pill";
+    pill.dataset.song = id;
+    pill.setAttribute("role", "tab");
+    pill.textContent = meta.shortTitle ?? meta.title;
+    pill.addEventListener("click", () => selectSong(id));
+    pills.appendChild(pill);
+  }
+
+  select.addEventListener("change", () => {
+    selectSong(select.value);
+  });
+
+  picker.append(label, select, pills);
+  return picker;
+}
+
 function buildSongsUI() {
+  const songIds = getAvailableSongIds();
   songsContainer.innerHTML = "";
-  songsContainer.appendChild(buildSongSection("twinkle"));
-  songsContainer.appendChild(buildSongSection("xmas"));
-  songsContainer.appendChild(buildSongSection("ducks"));
-  songsContainer.appendChild(buildSongSection("bridge"));
-  songsContainer.appendChild(buildSongSection("oysya"));
-  songsContainer.appendChild(buildSongSection("golden"));
-  songsContainer.appendChild(buildSongSection("takedown"));
+  songSectionById.clear();
+
+  if (songIds.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "song-empty";
+    empty.textContent = "No songs found in piano.sh.";
+    songsContainer.appendChild(empty);
+    return;
+  }
+
+  songsContainer.appendChild(buildSongPicker(songIds));
+
+  const panel = document.createElement("div");
+  panel.id = "song-panel";
+  panel.className = "song-panel";
+
+  for (const id of songIds) {
+    const section = buildSongSection(id);
+    songSectionById.set(id, section);
+    panel.appendChild(section);
+  }
+
+  songsContainer.appendChild(panel);
+
+  const stored = sessionStorage.getItem(SELECTED_SONG_STORAGE_KEY);
+  const initial = stored && songIds.includes(stored) ? stored : songIds[0];
+  selectSong(initial);
 }
 
 function updateKeyHints() {
@@ -1168,7 +1289,7 @@ function updateKeyHints() {
   const extended =
     "88-key layers: ⌃⌥ low2 | ⌥ low1 | ⌃ down | ⇧ up | ⇧⌥ high1 | ⇧⌃ high2 | ⇧⌃⌥U=A#0";
   const shortcuts =
-    "Twinkle [1]–[6] [R]  |  Christmas [7][8][9][0][-][=] [M]  |  Ducks [,][.][/][;] [[]] [L]  |  Bridge [I][O][P][V] [!]  |  Oysya [?][@][#][$][%][^] [&]  |  Golden [space][`][(][)]['] [\"] [|]  |  Takedown [b][B][c][C][~][+] [_]  |  Black keys [W][E][T][Y][U]";
+    "Twinkle [1]–[6] [R]  |  Christmas [7][8][9][0][-][=] [M]  |  Ducks [,][.][/][;] [[]] [L]  |  Bridge [I][O][P][V] [!]  |  Oysya [?][@][#][$][%][^] [&]  |  Golden [space][`][(][)]['] [\"] [|]  |  Takedown [b][c][~][+][_][*] [*]  |  Black keys [W][E][T][Y][U]";
   const full = `${mapped}  |  ${extended}  |  ${shortcuts}`;
   keyHintsEl.textContent = full;
   keyHintsEl.dataset.fullHints = full;
@@ -1278,7 +1399,7 @@ function handleKeydown(event) {
     return;
   }
 
-  if (key === "_") {
+  if (key === "*") {
     event.preventDefault();
     unlockAudio();
     playFullSong(
@@ -1288,15 +1409,7 @@ function handleKeydown(event) {
     return;
   }
 
-  for (const songId of [
-    "twinkle",
-    "xmas",
-    "ducks",
-    "bridge",
-    "oysya",
-    "golden",
-    "takedown",
-  ]) {
+  for (const songId of SONG_DISPLAY_ORDER) {
     const meta = SONG_META[songId];
     const idx = findPhraseKeyIndex(meta, key);
     if (idx === -1) continue;

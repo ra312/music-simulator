@@ -19,6 +19,7 @@ The piano uses the standard **two-row** layout:
 - **London Bridge phrases:** `I` `O` `P` `V` — full song `!`
 - **Ойся ты ойся (Oysya):** phrases `?` `@` `#` `$` `%` `^` — full song `&`
 - **Golden (HUNTR/X / Huntrix):** phrases `space` `` ` `` `(` `)` `'` `"` — full song `|`
+- **Takedown (HUNTR/X):** phrases `b` `c` `~` `+` `_` `*` — full song `*`
 - **Takedown (KPop Demon Hunters / HUNTR/X):** phrases `b` `B` `c` `C` `~` `+` — full song `_`
 
 Melody for Oysya is a simplified RH arrangement from public piano-letter tutorials (Synthesia-style); MIDI export can be added later from the phrase notes in `piano.sh`.
@@ -61,7 +62,7 @@ python3 -m http.server 8080
 
 Open [http://localhost:8080/web/](http://localhost:8080/web/)
 
-The page shows a **Mac keyboard map** (classic two rows for songs) plus an **octave-layer table** for the full range, and a **scrollable 88-key piano** (A0–C8). Click or tap any key, or use the computer keyboard: classic keys without modifiers, extended keys with modifier layers (see table above). Mapped keys are highlighted in gold (classic letter or modifier hint like ⇧K). **Cover keys** hides hints on both the Mac guide and the piano; **Practice** on a phrase hides hints on phrase cards too.
+The page shows a **Mac keyboard map** (classic two rows for songs) plus an **octave-layer table** for the full range, and a **scrollable 88-key piano** (A0–C8). **Choose a song** from the picker below the piano — only that song’s phrase cards and melody notes are shown (your last choice is remembered for the session). Click or tap any key, or use the computer keyboard: classic keys without modifiers, extended keys with modifier layers (see table above). Mapped keys are highlighted in gold (classic letter or modifier hint like ⇧K). **Cover keys** hides hints on both the Mac guide and the piano; **Practice** on a phrase hides hints on phrase cards too.
 
 ## Host online for free
 

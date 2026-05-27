@@ -645,7 +645,123 @@ body.cover-keys #key-hints-covered {
 .songs-container {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.25rem;
+}
+
+.song-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--key-border);
+  border-radius: 10px;
+}
+
+.song-picker-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.song-select {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--text);
+  background: var(--surface-2);
+  border: 1px solid var(--key-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.song-select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.song-picker-pills {
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.song-pill {
+  flex: 0 0 auto;
+  border: 1px solid var(--key-border);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.12s,
+    border-color 0.12s,
+    color 0.12s;
+  white-space: nowrap;
+}
+
+.song-pill:hover {
+  border-color: var(--accent);
+  background: #2f3549;
+}
+
+.song-pill.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.song-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.song-section[hidden] {
+  display: none !important;
+}
+
+.song-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.melody-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  align-items: baseline;
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px dashed var(--key-border);
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+
+.melody-summary-label {
+  flex: 0 0 auto;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+}
+
+.melody-summary-notes {
+  flex: 1;
+  min-width: 10rem;
+  font-family: ui-monospace, "SF Mono", monospace;
+  line-height: 1.5;
+  letter-spacing: 0.06em;
+  word-break: break-word;
 }
 
 .song-section h2 {
@@ -893,6 +1009,35 @@ body.cover-keys #key-hints-covered {
 .key-hints-covered {
   color: var(--practice);
   font-size: 0.85rem;
+}
+
+@media (min-width: 560px) {
+  .song-select {
+    display: none;
+  }
+
+  .song-picker-pills {
+    display: flex;
+  }
+
+  .song-picker-label {
+    margin-bottom: 0.15rem;
+  }
+}
+
+@media (max-width: 559px) {
+  .song-picker-pills {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.2rem;
+    scrollbar-width: thin;
+  }
+
+  .song-select {
+    display: block;
+  }
 }
 
 @media (max-width: 520px) {
