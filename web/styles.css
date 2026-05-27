@@ -24,6 +24,7 @@
   --error-border: #f7768e;
   --pop-color: #9ece6a;
   --white-key-height: 200px;
+  --white-key-width: 26px;
   --black-key-height: 118px;
   --black-key-width-ratio: 0.58;
 }
@@ -71,7 +72,7 @@ body {
 }
 
 .main {
-  max-width: 960px;
+  max-width: min(1200px, 100%);
   margin: 0 auto;
   padding: 1rem 1rem 2rem;
   display: flex;
@@ -241,9 +242,27 @@ body.cover-keys .twin-towers-intro kbd {
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
 
-.btn-cover-keys:hover {
+.btn-cover-keys:hover,
+.btn-toggle-labels:hover {
   border-color: var(--accent);
   background: #2f3549;
+}
+
+.btn-toggle-labels {
+  border: 1px solid var(--key-border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+body.piano-labels-all .btn-toggle-labels {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 body.cover-keys .btn-cover-keys {
@@ -262,18 +281,40 @@ body.cover-keys .cover-status {
   color: var(--practice);
 }
 
+.piano-range-hint {
+  margin: 0 0 0.65rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.piano-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+  padding-bottom: 0.35rem;
+  border-radius: 8px;
+  scrollbar-color: var(--key-border) var(--surface-2);
+}
+
+.piano-scroll:focus-within {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
 .piano-wrap {
   position: relative;
-  width: 100%;
-  max-width: 880px;
+  width: max-content;
+  min-width: 100%;
   margin: 0 auto;
   padding: 0.5rem 0 0.25rem;
 }
 
 .piano-horizontal {
   position: relative;
-  width: 100%;
-  --white-count: 11;
+  width: calc(var(--white-key-width) * var(--white-count));
+  --white-count: 52;
 }
 
 .piano-white-keys {
@@ -314,8 +355,9 @@ body.cover-keys .cover-status {
 /* White keys */
 
 .piano-key.white {
-  flex: 1;
-  min-width: 0;
+  flex: 0 0 var(--white-key-width);
+  width: var(--white-key-width);
+  min-width: var(--white-key-width);
   height: var(--white-key-height);
   display: flex;
   flex-direction: column;
@@ -433,7 +475,11 @@ body.cover-keys .cover-status {
 }
 
 .piano-key.white .note-label {
-  font-size: 0.8rem;
+  font-size: 0.65rem;
+}
+
+body.piano-labels-c-only .piano-key.white:not(.c-labeled) .note-label {
+  display: none;
 }
 
 .piano-key .key-hint {
@@ -727,21 +773,22 @@ body.cover-keys #key-hints-covered {
 }
 
 @media (max-width: 520px) {
-  .piano-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .piano-horizontal {
-    min-width: 520px;
+  :root {
+    --white-key-width: 22px;
+    --white-key-height: 168px;
+    --black-key-height: 100px;
   }
 
   .piano-key.white .note-label {
-    font-size: 0.65rem;
+    font-size: 0.55rem;
   }
 
   .piano-key .key-hint {
-    font-size: 0.6rem;
-    padding: 0.08rem 0.3rem;
+    font-size: 0.55rem;
+    padding: 0.06rem 0.25rem;
+  }
+
+  .piano-key.black .note-label {
+    font-size: 0.48rem;
   }
 }

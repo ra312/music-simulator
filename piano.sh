@@ -1,5 +1,8 @@
 # 🎹 Bash Piano — piano-like tone using SoX
 # Requires: brew install sox
+#
+# Mac keyboard maps ~1.5 octaves (G3–C5) for play-along songs.
+# Full 88-key range (A0–C8) is available in the web UI only (web/app.js).
 
 PLAY_NOTE() {
     play -q -n \
@@ -161,6 +164,37 @@ PLAY_OYSYA() {
     done
 }
 
+# Play one phrase of Golden (HUNTR/X / Huntrix) — chorus simplified, 6 phrases
+PLAY_GOLDEN_PHRASE() {
+    local notes=() times=()
+    case "$1" in
+        1) notes=(G4 A4 B4 B4 G4 A4 B4 B4)
+           times=(0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.9) ;;
+        2) notes=(B3 B3 E4 E4 E4)
+           times=(0.45 0.45 0.45 0.45 0.9) ;;
+        3) notes=(B3 B3 D4 D4 A3)
+           times=(0.45 0.45 0.45 0.45 0.9) ;;
+        4) notes=(D4 D4 D4 D4 C4 C4 C4 B3)
+           times=(0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.9) ;;
+        5) notes=(D4 D4 D4 D4 C4 C4 C4 B3)
+           times=(0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.9) ;;
+        6) notes=(E4 E4 G4 F#4 E4 D4 D4 A3)
+           times=(0.45 0.45 0.45 0.45 0.45 0.45 0.45 0.9) ;;
+        *) return 1 ;;
+    esac
+    for i in "${!notes[@]}"; do
+        PLAY_NOTE "${notes[i]}"
+        sleep "${times[i]}"
+    done
+}
+
+PLAY_GOLDEN() {
+    for p in 1 2 3 4 5 6; do
+        PLAY_GOLDEN_PHRASE "$p"
+        sleep 0.12
+    done
+}
+
 clear
 cat <<'EOF'
 ==========================================
@@ -195,6 +229,9 @@ cat <<'EOF'
 
    Ойся ты ойся (Oysya ty oysya):
    [&] = full song   [?][@][#][$][%][^] = phrases 1–6
+
+   Golden (HUNTR/X / Huntrix):
+   [|] = full song   [space][`][(][)][']["] = phrases 1–6
 
  ── Twinkle Twinkle — play along with keys ──
 
@@ -290,6 +327,26 @@ cat <<'EOF'
    [^] A G A D A A G F E E
        H G H S H H G F D D
 
+ ── Golden — play along with keys ──
+
+   [ ] G A B B G A B B     (verse hook)
+       G H J J G H J J
+
+   [`] B B E E E           We're goin' up
+       N N D D D
+
+   [(] B B D D A           It's our moment
+       N N S S X
+
+   [)] D D D D C C C B     glowin'
+       S S S S A A A N
+
+   ['] D D D D C C C B     golden
+       S S S S A A A N
+
+   ["] E E G T E D D A     up with our voices
+       D D G T D S S X
+
    [Q] = quit
 ==========================================
 EOF
@@ -346,6 +403,13 @@ while true; do
         %|%) PLAY_OYSYA_PHRASE 5 ;;
         ^|^) PLAY_OYSYA_PHRASE 6 ;;
         &|&) PLAY_OYSYA ;;
+        \ |'') PLAY_GOLDEN_PHRASE 1 ;;
+        \`|`) PLAY_GOLDEN_PHRASE 2 ;;
+        \(|() PLAY_GOLDEN_PHRASE 3 ;;
+        \)|)) PLAY_GOLDEN_PHRASE 4 ;;
+        \'|') PLAY_GOLDEN_PHRASE 5 ;;
+        \"|") PLAY_GOLDEN_PHRASE 6 ;;
+        \|'|`) PLAY_GOLDEN ;;
         q|Q) echo -e "\n👋 Bye!"; break ;;
     esac
 done

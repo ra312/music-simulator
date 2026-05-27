@@ -1,32 +1,64 @@
 const PIANO_SH_URL = "../piano.sh";
 
-/** White keys on the horizontal piano (low → high, left → right). */
-const PIANO_WHITE_KEYS = [
-  "G3",
-  "A3",
-  "B3",
-  "C4",
-  "D4",
-  "E4",
-  "F4",
-  "G4",
-  "A4",
-  "B4",
-  "C5",
+/** Standard 88-key piano: A0 (MIDI 21) through C8 (MIDI 108). */
+const MIDI_MIN = 21;
+const MIDI_MAX = 108;
+const CHROMATIC_NAMES = [
+  "C",
+  "C#",
+  "D",
+  "D#",
+  "E",
+  "F",
+  "F#",
+  "G",
+  "G#",
+  "A",
+  "A#",
+  "B",
 ];
 
-/** Black keys placed after their preceding white key. */
-const BLACK_KEY_AFTER_WHITE = {
-  G3: "G#3",
-  A3: "A#3",
-  C4: "C#4",
-  D4: "D#4",
-  F4: "F#4",
-  G4: "G#4",
-  A4: "A#4",
-};
-
 const NOTE_NAMES = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+
+/** @param {number} midi */
+function isBlackMidi(midi) {
+  const pc = midi % 12;
+  return pc === 1 || pc === 3 || pc === 6 || pc === 8 || pc === 10;
+}
+
+/** @param {number} midi */
+function midiToNoteId(midi) {
+  const octave = Math.floor(midi / 12) - 1;
+  return CHROMATIC_NAMES[midi % 12] + octave;
+}
+
+/** @returns {{ whiteKeys: string[], blackAfterWhite: Record<string, string> }} */
+function build88KeyLayout() {
+  const whiteKeys = [];
+  const midiByNote = new Map();
+
+  for (let midi = MIDI_MIN; midi <= MIDI_MAX; midi++) {
+    const noteId = midiToNoteId(midi);
+    midiByNote.set(noteId, midi);
+    if (!isBlackMidi(midi)) {
+      whiteKeys.push(noteId);
+    }
+  }
+
+  const blackAfterWhite = {};
+  for (let i = 0; i < whiteKeys.length; i++) {
+    const midi = midiByNote.get(whiteKeys[i]);
+    const nextMidi = midi + 1;
+    if (nextMidi <= MIDI_MAX && isBlackMidi(nextMidi)) {
+      blackAfterWhite[whiteKeys[i]] = midiToNoteId(nextMidi);
+    }
+  }
+
+  return { whiteKeys, blackAfterWhite };
+}
+
+const { whiteKeys: PIANO_WHITE_KEYS, blackAfterWhite: BLACK_KEY_AFTER_WHITE } =
+  build88KeyLayout();
 
 /** @type {Record<string, string>} */
 const SONG_META = {
@@ -93,6 +125,19 @@ const SONG_META = {
       "Melody ending",
     ],
   },
+  golden: {
+    title: "Golden (HUNTR/X / Huntrix)",
+    fullKey: "|",
+    phraseKeys: [" ", "`", "(", ")", "'", '"'],
+    lyrics: [
+      "Verse hook",
+      "We're goin' up",
+      "It's our moment",
+      "glowin'",
+      "golden",
+      "up with our voices",
+    ],
+  },
 };
 
 /** @type {AudioContext | null} */
@@ -102,7 +147,14 @@ let audioCtx = null;
 let keymap = [];
 
 /** @type {Record<string, { notes: string[], times: number[] }>} */
-let songs = { twinkle: {}, xmas: {}, ducks: {}, bridge: {}, oysya: {} };
+let songs = {
+  twinkle: {},
+  xmas: {},
+  ducks: {},
+  bridge: {},
+  oysya: {},
+  golden: {},
+};
 
 /** @type {Record<string, number>} */
 let songPhraseGap = {
@@ -111,6 +163,7 @@ let songPhraseGap = {
   ducks: 0.12,
   bridge: 0.12,
   oysya: 0.12,
+  golden: 0.12,
 };
 
 /** @type {Map<string, HTMLElement>} */
@@ -126,6 +179,7 @@ const noteFreqCache = new Map();
 let phraseTimeouts = [];
 
 let coverKeysEnabled = false;
+let showAllNoteLabels = false;
 
 /** @type {HTMLElement | null} */
 let practicingCard = null;
@@ -137,7 +191,9 @@ const songsContainer = document.getElementById("songs-container");
 const keyHintsEl = document.getElementById("key-hints");
 const keyHintsCoveredEl = document.getElementById("key-hints-covered");
 const btnCoverKeys = document.getElementById("btn-cover-keys");
+const btnToggleLabels = document.getElementById("btn-toggle-labels");
 const coverStatusEl = document.getElementById("cover-status");
+const pianoScrollEl = document.getElementById("piano-scroll");
 
 function showError(message) {
   errorBanner.textContent = message;
@@ -145,7 +201,7 @@ function showError(message) {
 }
 
 /**
- * @param {string} noteId e.g. C4, G3
+ * @param {string} noteId e.g. C4, G3, C#4
  */
 function noteToMidi(noteId) {
   const m = noteId.match(/^([A-G])(#|b)?(\d+)$/);
@@ -156,18 +212,30 @@ function noteToMidi(noteId) {
   return midi;
 }
 
+/** @param {number} midi */
+function midiToFreq(midi) {
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
 /**
  * @param {string} noteId
  */
 function noteToFreq(noteId) {
   if (noteFreqCache.has(noteId)) return noteFreqCache.get(noteId);
-  const freq = 440 * Math.pow(2, (noteToMidi(noteId) - 69) / 12);
+  const midi = noteToMidi(noteId);
+  const freq = midiToFreq(midi);
   noteFreqCache.set(noteId, freq);
   return freq;
 }
 
 function noteLabel(noteId) {
   return noteId;
+}
+
+/** @param {string} noteId */
+function shouldShowNoteLabel(noteId) {
+  if (showAllNoteLabels) return true;
+  return /^C\d+$/.test(noteId);
 }
 
 /**
@@ -224,7 +292,10 @@ export function parsePianoSh(text) {
     /PLAY_BRIDGE_PHRASE\(\)[\s\S]*?(?=\nPLAY_BRIDGE\(\)|\nPLAY_OYSYA_PHRASE)/
   );
   const oysyaBlock = text.match(
-    /PLAY_OYSYA_PHRASE\(\)[\s\S]*?(?=\nPLAY_OYSYA\(\)|\nclear)/
+    /PLAY_OYSYA_PHRASE\(\)[\s\S]*?(?=\nPLAY_OYSYA\(\)|\nPLAY_GOLDEN_PHRASE)/
+  );
+  const goldenBlock = text.match(
+    /PLAY_GOLDEN_PHRASE\(\)[\s\S]*?(?=\nPLAY_GOLDEN\(\)|\nclear)/
   );
 
   if (!twinkleBlock) throw new Error("PLAY_TWINKLE_PHRASE not found in piano.sh");
@@ -232,12 +303,14 @@ export function parsePianoSh(text) {
   if (!ducksBlock) throw new Error("PLAY_DUCKS_PHRASE not found in piano.sh");
   if (!bridgeBlock) throw new Error("PLAY_BRIDGE_PHRASE not found in piano.sh");
   if (!oysyaBlock) throw new Error("PLAY_OYSYA_PHRASE not found in piano.sh");
+  if (!goldenBlock) throw new Error("PLAY_GOLDEN_PHRASE not found in piano.sh");
 
   const twinklePhrases = parsePhrasesFromBlock(twinkleBlock[0]);
   const xmasPhrases = parsePhrasesFromBlock(xmasBlock[0]);
   const ducksPhrases = parsePhrasesFromBlock(ducksBlock[0]);
   const bridgePhrases = parsePhrasesFromBlock(bridgeBlock[0]);
   const oysyaPhrases = parsePhrasesFromBlock(oysyaBlock[0]);
+  const goldenPhrases = parsePhrasesFromBlock(goldenBlock[0]);
 
   if (Object.keys(bridgePhrases).length === 0) {
     throw new Error("No London Bridge phrases found in piano.sh");
@@ -245,12 +318,16 @@ export function parsePianoSh(text) {
   if (Object.keys(oysyaPhrases).length === 0) {
     throw new Error("No Oysya phrases found in piano.sh");
   }
+  if (Object.keys(goldenPhrases).length === 0) {
+    throw new Error("No Golden phrases found in piano.sh");
+  }
 
   const twinkleGap = text.match(/PLAY_TWINKLE\(\)[\s\S]*?sleep\s+([\d.]+)/);
   const xmasGap = text.match(/PLAY_XMAS\(\)[\s\S]*?sleep\s+([\d.]+)/);
   const ducksGap = text.match(/PLAY_DUCKS\(\)[\s\S]*?sleep\s+([\d.]+)/);
   const bridgeGap = text.match(/PLAY_BRIDGE\(\)[\s\S]*?sleep\s+([\d.]+)/);
   const oysyaGap = text.match(/PLAY_OYSYA\(\)[\s\S]*?sleep\s+([\d.]+)/);
+  const goldenGap = text.match(/PLAY_GOLDEN\(\)[\s\S]*?sleep\s+([\d.]+)/);
 
   return {
     keymap: parsedKeymap,
@@ -260,6 +337,7 @@ export function parsePianoSh(text) {
       ducks: ducksPhrases,
       bridge: bridgePhrases,
       oysya: oysyaPhrases,
+      golden: goldenPhrases,
     },
     songPhraseGap: {
       twinkle: twinkleGap ? parseFloat(twinkleGap[1]) : 0.12,
@@ -267,6 +345,7 @@ export function parsePianoSh(text) {
       ducks: ducksGap ? parseFloat(ducksGap[1]) : 0.12,
       bridge: bridgeGap ? parseFloat(bridgeGap[1]) : 0.12,
       oysya: oysyaGap ? parseFloat(oysyaGap[1]) : 0.12,
+      golden: goldenGap ? parseFloat(goldenGap[1]) : 0.12,
     },
   };
 }
@@ -497,10 +576,11 @@ function createKeyButton(noteId, kind, mappedByNote, afterWhiteIndex) {
     ? `<span class="key-hint coverable">${entry.primaryKey}</span>`
     : "";
 
-  btn.innerHTML = `
-    ${keyHintHtml}
-    <span class="note-label">${noteLabel(noteId)}</span>
-  `;
+  const labelHtml = shouldShowNoteLabel(noteId)
+    ? `<span class="note-label">${noteLabel(noteId)}</span>`
+    : "";
+
+  btn.innerHTML = `${keyHintHtml}${labelHtml}`;
 
   const activate = (e) => {
     e.preventDefault();
@@ -585,6 +665,31 @@ function buildMacKeyboardGuide() {
   container.appendChild(
     makeRow("white", MAC_KEYBOARD_LAYOUT.white, "Home row — white keys")
   );
+}
+
+function scrollPianoToMiddleC() {
+  const c4 = noteToKeyEl.get("C4");
+  if (!c4 || !pianoScrollEl) return;
+  const scrollLeft =
+    c4.offsetLeft -
+    pianoScrollEl.clientWidth / 2 +
+    c4.offsetWidth / 2;
+  pianoScrollEl.scrollLeft = Math.max(0, scrollLeft);
+}
+
+function setNoteLabelsMode(allLabels) {
+  showAllNoteLabels = allLabels;
+  if (btnToggleLabels) {
+    btnToggleLabels.setAttribute("aria-pressed", String(allLabels));
+    btnToggleLabels.textContent = allLabels ? "C labels only" : "All note labels";
+    btnToggleLabels.title = allLabels
+      ? "Show only C note names on white keys"
+      : "Show every note name on white keys";
+  }
+  document.body.classList.toggle("piano-labels-all", allLabels);
+  document.body.classList.toggle("piano-labels-c-only", !allLabels);
+  buildKeyboard();
+  scrollPianoToMiddleC();
 }
 
 function buildKeyboard() {
@@ -725,6 +830,7 @@ function buildSongsUI() {
   songsContainer.appendChild(buildSongSection("ducks"));
   songsContainer.appendChild(buildSongSection("bridge"));
   songsContainer.appendChild(buildSongSection("oysya"));
+  songsContainer.appendChild(buildSongSection("golden"));
 }
 
 function updateKeyHints() {
@@ -841,6 +947,14 @@ function setupCoverToggle() {
   setCoverKeys(false);
 }
 
+function setupLabelToggle() {
+  if (!btnToggleLabels) return;
+  btnToggleLabels.addEventListener("click", () => {
+    setNoteLabelsMode(!showAllNoteLabels);
+  });
+  setNoteLabelsMode(false);
+}
+
 async function init() {
   try {
     const res = await fetch(PIANO_SH_URL);
@@ -861,6 +975,8 @@ async function init() {
     buildSongsUI();
     updateKeyHints();
     setupCoverToggle();
+    setupLabelToggle();
+    scrollPianoToMiddleC();
 
     window.addEventListener("keydown", handleKeydown);
 

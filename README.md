@@ -38,7 +38,7 @@ python3 -m http.server 8080
 
 Open [http://localhost:8080/web/](http://localhost:8080/web/)
 
-The page shows a **Mac keyboard map** (two rows) plus a horizontal piano. Use **Cover keys** or **Practice** on a phrase to hide key hints while learning.
+The page shows a **Mac keyboard map** (two rows, ~1½ octaves for songs) plus a **scrollable 88-key piano** (A0–C8, 52 white + 36 black keys). Click or tap any key to play via Web Audio; frequencies use MIDI 21–108 (A0 = 27.5 Hz). Scroll horizontally on narrow screens to reach low and high notes — the view starts centered on middle C (C4). Mapped Mac keys from `piano.sh` are highlighted in gold. Use **Cover keys** or **Practice** on a phrase to hide key hints while learning; toggle **All note labels** to show every pitch name (default: C notes only on white keys).
 
 ## Host online for free
 
