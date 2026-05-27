@@ -1,8 +1,8 @@
 # 🎹 Bash Piano — piano-like tone using SoX
 # Requires: brew install sox
 #
-# Mac keyboard maps ~1.5 octaves (G3–C5) for play-along songs.
-# Full 88-key range (A0–C8) is available in the web UI only (web/app.js).
+# Classic Mac keys: ~1.5 octaves (G3–C5) for play-along songs.
+# Full 88-key range (A0–C8): octave layers — see # EXTENDED_KEYMAP below.
 
 PLAY_NOTE() {
     play -q -n \
@@ -195,6 +195,99 @@ PLAY_GOLDEN() {
     done
 }
 
+# --- Full 88-key range (A0–C8): octave layers on classic keys ---
+# Web: hold modifier(s) + note key. Terminal: \\ then layer letter then note key.
+#   Layer │ Web modifiers        │ Bash \\+ │ Offset
+#   low2  │ Ctrl+Alt (⌃⌥)        │ a        │ −3 octaves
+#   low1  │ Alt (⌥)              │ s        │ −2 octaves
+#   down  │ Control (⌃)          │ d        │ −1 octave
+#   up    │ Shift (⇧)            │ g        │ +1 octave
+#   high1 │ Shift+Alt (⇧⌥)       │ h        │ +2 octaves
+#   high2 │ Shift+Ctrl (⇧⌃)      │ j        │ +3 octaves
+#   abyss │ Shift+Ctrl+Alt (⇧⌃⌥) │ u + U    │ A#0 only
+# EXTENDED_KEYMAP_BEGIN
+[{"mods":["control","alt"],"key":"x","note":"A0","bash":"a"},{"mods":["control","alt"],"key":"n","note":"B0","bash":"a"},{"mods":["control","alt"],"key":"w","note":"C#1","bash":"a"},{"mods":["control","alt"],"key":"e","note":"D#1","bash":"a"},{"mods":["control","alt"],"key":"t","note":"F#1","bash":"a"},{"mods":["control","alt"],"key":"y","note":"G#1","bash":"a"},{"mods":["control","alt"],"key":"u","note":"A#1","bash":"a"},{"mods":["control","alt"],"key":"a","note":"C1","bash":"a"},{"mods":["control","alt"],"key":"s","note":"D1","bash":"a"},{"mods":["control","alt"],"key":"d","note":"E1","bash":"a"},{"mods":["control","alt"],"key":"f","note":"F1","bash":"a"},{"mods":["control","alt"],"key":"g","note":"G1","bash":"a"},{"mods":["control","alt"],"key":"h","note":"A1","bash":"a"},{"mods":["control","alt"],"key":"j","note":"B1","bash":"a"},{"mods":["control","alt"],"key":"k","note":"C2","bash":"a"},{"mods":["alt"],"key":"w","note":"C#2","bash":"s"},{"mods":["alt"],"key":"e","note":"D#2","bash":"s"},{"mods":["alt"],"key":"t","note":"F#2","bash":"s"},{"mods":["alt"],"key":"y","note":"G#2","bash":"s"},{"mods":["alt"],"key":"u","note":"A#2","bash":"s"},{"mods":["alt"],"key":"s","note":"D2","bash":"s"},{"mods":["alt"],"key":"d","note":"E2","bash":"s"},{"mods":["alt"],"key":"f","note":"F2","bash":"s"},{"mods":["alt"],"key":"g","note":"G2","bash":"s"},{"mods":["alt"],"key":"h","note":"A2","bash":"s"},{"mods":["alt"],"key":"j","note":"B2","bash":"s"},{"mods":["alt"],"key":"k","note":"C3","bash":"s"},{"mods":["control"],"key":"w","note":"C#3","bash":"d"},{"mods":["control"],"key":"e","note":"D#3","bash":"d"},{"mods":["control"],"key":"t","note":"F#3","bash":"d"},{"mods":["control"],"key":"y","note":"G#3","bash":"d"},{"mods":["control"],"key":"u","note":"A#3","bash":"d"},{"mods":["control"],"key":"s","note":"D3","bash":"d"},{"mods":["control"],"key":"d","note":"E3","bash":"d"},{"mods":["control"],"key":"f","note":"F3","bash":"d"},{"mods":["shift"],"key":"w","note":"C#5","bash":"g"},{"mods":["shift"],"key":"e","note":"D#5","bash":"g"},{"mods":["shift"],"key":"t","note":"F#5","bash":"g"},{"mods":["shift"],"key":"y","note":"G#5","bash":"g"},{"mods":["shift"],"key":"u","note":"A#5","bash":"g"},{"mods":["shift"],"key":"s","note":"D5","bash":"g"},{"mods":["shift"],"key":"d","note":"E5","bash":"g"},{"mods":["shift"],"key":"f","note":"F5","bash":"g"},{"mods":["shift"],"key":"g","note":"G5","bash":"g"},{"mods":["shift"],"key":"h","note":"A5","bash":"g"},{"mods":["shift"],"key":"j","note":"B5","bash":"g"},{"mods":["shift"],"key":"k","note":"C6","bash":"g"},{"mods":["shift","alt"],"key":"w","note":"C#6","bash":"h"},{"mods":["shift","alt"],"key":"e","note":"D#6","bash":"h"},{"mods":["shift","alt"],"key":"t","note":"F#6","bash":"h"},{"mods":["shift","alt"],"key":"y","note":"G#6","bash":"h"},{"mods":["shift","alt"],"key":"u","note":"A#6","bash":"h"},{"mods":["shift","alt"],"key":"s","note":"D6","bash":"h"},{"mods":["shift","alt"],"key":"d","note":"E6","bash":"h"},{"mods":["shift","alt"],"key":"f","note":"F6","bash":"h"},{"mods":["shift","alt"],"key":"g","note":"G6","bash":"h"},{"mods":["shift","alt"],"key":"h","note":"A6","bash":"h"},{"mods":["shift","alt"],"key":"j","note":"B6","bash":"h"},{"mods":["shift","alt"],"key":"k","note":"C7","bash":"h"},{"mods":["shift","control"],"key":"w","note":"C#7","bash":"j"},{"mods":["shift","control"],"key":"e","note":"D#7","bash":"j"},{"mods":["shift","control"],"key":"t","note":"F#7","bash":"j"},{"mods":["shift","control"],"key":"y","note":"G#7","bash":"j"},{"mods":["shift","control"],"key":"u","note":"A#7","bash":"j"},{"mods":["shift","control"],"key":"s","note":"D7","bash":"j"},{"mods":["shift","control"],"key":"d","note":"E7","bash":"j"},{"mods":["shift","control"],"key":"f","note":"F7","bash":"j"},{"mods":["shift","control"],"key":"g","note":"G7","bash":"j"},{"mods":["shift","control"],"key":"h","note":"A7","bash":"j"},{"mods":["shift","control"],"key":"j","note":"B7","bash":"j"},{"mods":["shift","control"],"key":"k","note":"C8","bash":"j"},{"mods":["shift","control","alt"],"key":"u","note":"A#0","bash":"u"}]
+# EXTENDED_KEYMAP_END
+
+PLAY_NOTE_EXTENDED() {
+    case "$1|$2" in
+        a|x|a|X) PLAY_NOTE "A0" ;;
+        a|n|a|N) PLAY_NOTE "B0" ;;
+        a|w|a|W) PLAY_NOTE "C#1" ;;
+        a|e|a|E) PLAY_NOTE "D#1" ;;
+        a|t|a|T) PLAY_NOTE "F#1" ;;
+        a|y|a|Y) PLAY_NOTE "G#1" ;;
+        a|u|a|U) PLAY_NOTE "A#1" ;;
+        a|a|a|A) PLAY_NOTE "C1" ;;
+        a|s|a|S) PLAY_NOTE "D1" ;;
+        a|d|a|D) PLAY_NOTE "E1" ;;
+        a|f|a|F) PLAY_NOTE "F1" ;;
+        a|g|a|G) PLAY_NOTE "G1" ;;
+        a|h|a|H) PLAY_NOTE "A1" ;;
+        a|j|a|J) PLAY_NOTE "B1" ;;
+        a|k|a|K) PLAY_NOTE "C2" ;;
+        s|w|s|W) PLAY_NOTE "C#2" ;;
+        s|e|s|E) PLAY_NOTE "D#2" ;;
+        s|t|s|T) PLAY_NOTE "F#2" ;;
+        s|y|s|Y) PLAY_NOTE "G#2" ;;
+        s|u|s|U) PLAY_NOTE "A#2" ;;
+        s|s|s|S) PLAY_NOTE "D2" ;;
+        s|d|s|D) PLAY_NOTE "E2" ;;
+        s|f|s|F) PLAY_NOTE "F2" ;;
+        s|g|s|G) PLAY_NOTE "G2" ;;
+        s|h|s|H) PLAY_NOTE "A2" ;;
+        s|j|s|J) PLAY_NOTE "B2" ;;
+        s|k|s|K) PLAY_NOTE "C3" ;;
+        d|w|d|W) PLAY_NOTE "C#3" ;;
+        d|e|d|E) PLAY_NOTE "D#3" ;;
+        d|t|d|T) PLAY_NOTE "F#3" ;;
+        d|y|d|Y) PLAY_NOTE "G#3" ;;
+        d|u|d|U) PLAY_NOTE "A#3" ;;
+        d|s|d|S) PLAY_NOTE "D3" ;;
+        d|d|d|D) PLAY_NOTE "E3" ;;
+        d|f|d|F) PLAY_NOTE "F3" ;;
+        g|w|g|W) PLAY_NOTE "C#5" ;;
+        g|e|g|E) PLAY_NOTE "D#5" ;;
+        g|t|g|T) PLAY_NOTE "F#5" ;;
+        g|y|g|Y) PLAY_NOTE "G#5" ;;
+        g|u|g|U) PLAY_NOTE "A#5" ;;
+        g|s|g|S) PLAY_NOTE "D5" ;;
+        g|d|g|D) PLAY_NOTE "E5" ;;
+        g|f|g|F) PLAY_NOTE "F5" ;;
+        g|g|g|G) PLAY_NOTE "G5" ;;
+        g|h|g|H) PLAY_NOTE "A5" ;;
+        g|j|g|J) PLAY_NOTE "B5" ;;
+        g|k|g|K) PLAY_NOTE "C6" ;;
+        h|w|h|W) PLAY_NOTE "C#6" ;;
+        h|e|h|E) PLAY_NOTE "D#6" ;;
+        h|t|h|T) PLAY_NOTE "F#6" ;;
+        h|y|h|Y) PLAY_NOTE "G#6" ;;
+        h|u|h|U) PLAY_NOTE "A#6" ;;
+        h|s|h|S) PLAY_NOTE "D6" ;;
+        h|d|h|D) PLAY_NOTE "E6" ;;
+        h|f|h|F) PLAY_NOTE "F6" ;;
+        h|g|h|G) PLAY_NOTE "G6" ;;
+        h|h|h|H) PLAY_NOTE "A6" ;;
+        h|j|h|J) PLAY_NOTE "B6" ;;
+        h|k|h|K) PLAY_NOTE "C7" ;;
+        j|w|j|W) PLAY_NOTE "C#7" ;;
+        j|e|j|E) PLAY_NOTE "D#7" ;;
+        j|t|j|T) PLAY_NOTE "F#7" ;;
+        j|y|j|Y) PLAY_NOTE "G#7" ;;
+        j|u|j|U) PLAY_NOTE "A#7" ;;
+        j|s|j|S) PLAY_NOTE "D7" ;;
+        j|d|j|D) PLAY_NOTE "E7" ;;
+        j|f|j|F) PLAY_NOTE "F7" ;;
+        j|g|j|G) PLAY_NOTE "G7" ;;
+        j|h|j|H) PLAY_NOTE "A7" ;;
+        j|j|j|J) PLAY_NOTE "B7" ;;
+        j|k|j|K) PLAY_NOTE "C8" ;;
+        u|u|u|U) PLAY_NOTE "A#0" ;;
+        *) ;;
+    esac
+}
+
+
 clear
 cat <<'EOF'
 ==========================================
@@ -232,6 +325,14 @@ cat <<'EOF'
 
    Golden (HUNTR/X / Huntrix):
    [|] = full song   [space][`][(][)][']["] = phrases 1–6
+
+  FULL 88 KEYS (A0–C8) — same note keys, octave layers:
+   Web: hold modifier + key (classic layer = no modifier).
+   Terminal: type [\] then layer letter (a/s/d/g/h/j) then note key.
+     low2 [\][a]  Ctrl+Alt     |  low1 [\][s]  Alt
+     down [\][d]  Control      |  up   [\][g]  Shift
+     high1[\][h]  Shift+Alt    |  high2[\][j]  Shift+Control
+     A#0 only: [\][u][U]  Shift+Control+Alt
 
  ── Twinkle Twinkle — play along with keys ──
 
@@ -410,6 +511,11 @@ while true; do
         \'|') PLAY_GOLDEN_PHRASE 5 ;;
         \"|") PLAY_GOLDEN_PHRASE 6 ;;
         \|'|`) PLAY_GOLDEN ;;
+        \\)
+            read -r -s -n 1 layer
+            read -r -s -n 1 nk
+            PLAY_NOTE_EXTENDED "$layer" "$nk"
+            ;;
         q|Q) echo -e "\n👋 Bye!"; break ;;
     esac
 done

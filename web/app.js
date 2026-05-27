@@ -146,6 +146,9 @@ let audioCtx = null;
 /** @type {{ keys: string[], note: string, primaryKey: string }[]} */
 let keymap = [];
 
+/** @type {{ mods: string[], key: string, note: string, bash?: string }[]} */
+let extendedKeymap = [];
+
 /** @type {Record<string, { notes: string[], times: number[] }>} */
 let songs = {
   twinkle: {},
@@ -171,6 +174,9 @@ const noteToKeyEl = new Map();
 
 /** @type {Map<string, string>} */
 const noteToKeyHint = new Map();
+
+/** @type {Map<string, string>} */
+const noteToExtendedHint = new Map();
 
 /** @type {Map<string, number>} */
 const noteFreqCache = new Map();
@@ -254,6 +260,52 @@ function parsePhrasesFromBlock(block) {
   return parsed;
 }
 
+/** @param {string[]} mods */
+function modsKey(mods) {
+  return [...mods].sort().join("+");
+}
+
+/** @param {KeyboardEvent} event */
+function modsFromEvent(event) {
+  const mods = [];
+  if (event.ctrlKey) mods.push("control");
+  if (event.altKey) mods.push("alt");
+  if (event.shiftKey) mods.push("shift");
+  return mods;
+}
+
+/** @param {KeyboardEvent} event */
+function hasModifiers(event) {
+  return event.ctrlKey || event.altKey || event.shiftKey;
+}
+
+/** @param {string[]} mods @param {string} key */
+function formatModHint(mods, key) {
+  const symbols = { shift: "⇧", control: "⌃", alt: "⌥" };
+  const prefix = [...mods]
+    .sort()
+    .map((m) => symbols[m] ?? m)
+    .join("");
+  return prefix + key.toUpperCase();
+}
+
+/**
+ * @param {string} text
+ */
+export function parseExtendedKeymap(text) {
+  const match = text.match(
+    /# EXTENDED_KEYMAP_BEGIN\s*\n([\s\S]*?)\n# EXTENDED_KEYMAP_END/
+  );
+  if (!match) {
+    throw new Error("EXTENDED_KEYMAP block not found in piano.sh");
+  }
+  const entries = JSON.parse(match[1].trim());
+  if (!Array.isArray(entries) || entries.length === 0) {
+    throw new Error("EXTENDED_KEYMAP is empty or invalid");
+  }
+  return entries;
+}
+
 /**
  * Parse mappings from piano.sh (single source of truth).
  * @param {string} text
@@ -295,8 +347,9 @@ export function parsePianoSh(text) {
     /PLAY_OYSYA_PHRASE\(\)[\s\S]*?(?=\nPLAY_OYSYA\(\)|\nPLAY_GOLDEN_PHRASE)/
   );
   const goldenBlock = text.match(
-    /PLAY_GOLDEN_PHRASE\(\)[\s\S]*?(?=\nPLAY_GOLDEN\(\)|\nclear)/
+    /PLAY_GOLDEN_PHRASE\(\)[\s\S]*?(?=\nPLAY_GOLDEN\(\)|\n# EXTENDED_KEYMAP_BEGIN)/
   );
+  const parsedExtended = parseExtendedKeymap(text);
 
   if (!twinkleBlock) throw new Error("PLAY_TWINKLE_PHRASE not found in piano.sh");
   if (!xmasBlock) throw new Error("PLAY_XMAS_PHRASE not found in piano.sh");
@@ -331,6 +384,7 @@ export function parsePianoSh(text) {
 
   return {
     keymap: parsedKeymap,
+    extendedKeymap: parsedExtended,
     songs: {
       twinkle: twinklePhrases,
       xmas: xmasPhrases,
@@ -352,8 +406,16 @@ export function parsePianoSh(text) {
 
 function buildNoteToKeyHint() {
   noteToKeyHint.clear();
+  noteToExtendedHint.clear();
   for (const entry of keymap) {
     noteToKeyHint.set(entry.note, entry.primaryKey.toUpperCase());
+  }
+  for (const entry of extendedKeymap) {
+    const hint = formatModHint(entry.mods, entry.key);
+    noteToExtendedHint.set(entry.note, hint);
+    if (!noteToKeyHint.has(entry.note)) {
+      noteToKeyHint.set(entry.note, hint);
+    }
   }
 }
 
@@ -561,7 +623,8 @@ function playFullSong(songId, activeBtn = null) {
  */
 function createKeyButton(noteId, kind, mappedByNote, afterWhiteIndex) {
   const entry = mappedByNote.get(noteId);
-  const isMapped = Boolean(entry);
+  const extHint = noteToExtendedHint.get(noteId);
+  const isMapped = Boolean(entry) || Boolean(extHint);
 
   const btn = document.createElement("button");
   btn.type = "button";
@@ -572,8 +635,14 @@ function createKeyButton(noteId, kind, mappedByNote, afterWhiteIndex) {
     btn.style.setProperty("--after-white-index", String(afterWhiteIndex));
   }
 
-  const keyHintHtml = entry
-    ? `<span class="key-hint coverable">${entry.primaryKey}</span>`
+  const hintText = entry
+    ? entry.primaryKey
+    : extHint ?? "";
+  const hintClass = entry
+    ? "key-hint coverable"
+    : "key-hint key-hint-extended coverable";
+  const keyHintHtml = hintText
+    ? `<span class="${hintClass}">${hintText}</span>`
     : "";
 
   const labelHtml = shouldShowNoteLabel(noteId)
@@ -665,6 +734,36 @@ function buildMacKeyboardGuide() {
   container.appendChild(
     makeRow("white", MAC_KEYBOARD_LAYOUT.white, "Home row — white keys")
   );
+
+  const extGuide = document.getElementById("mac-extended-guide");
+  if (extGuide) {
+    extGuide.innerHTML = "";
+    const heading = document.createElement("h3");
+    heading.className = "coverable";
+    heading.textContent = "Full 88 keys — octave layers (same note keys)";
+    extGuide.appendChild(heading);
+    const table = document.createElement("table");
+    table.className = "extended-layers-table coverable";
+    table.innerHTML = `
+      <thead><tr><th>Layer</th><th>Web (hold)</th><th>Terminal</th><th>Range</th></tr></thead>
+      <tbody>
+        <tr><td>Classic</td><td><em>none</em></td><td>direct key</td><td>G3–C5 (songs)</td></tr>
+        <tr><td>low2</td><td>⌃⌥</td><td>\\ then <kbd>a</kbd></td><td>≈ A0–C2</td></tr>
+        <tr><td>low1</td><td>⌥</td><td>\\ then <kbd>s</kbd></td><td>≈ C#2–C3</td></tr>
+        <tr><td>down</td><td>⌃</td><td>\\ then <kbd>d</kbd></td><td>≈ C#3–F3</td></tr>
+        <tr><td>up</td><td>⇧</td><td>\\ then <kbd>g</kbd></td><td>≈ C#5–C6</td></tr>
+        <tr><td>high1</td><td>⇧⌥</td><td>\\ then <kbd>h</kbd></td><td>≈ C#6–C7</td></tr>
+        <tr><td>high2</td><td>⇧⌃</td><td>\\ then <kbd>j</kbd></td><td>≈ C#7–C8</td></tr>
+        <tr><td>A#0</td><td>⇧⌃⌥ + <kbd>U</kbd></td><td>\\ <kbd>u</kbd> <kbd>U</kbd></td><td>A#0 only</td></tr>
+      </tbody>
+    `;
+    extGuide.appendChild(table);
+    const note = document.createElement("p");
+    note.className = "extended-layers-note coverable";
+    note.textContent =
+      "Extended layers use the same note keys (Z X N, W E T Y U, A–K). Example: Shift+K = C6, Ctrl+Alt+X = A0.";
+    extGuide.appendChild(note);
+  }
 }
 
 function scrollPianoToMiddleC() {
@@ -837,9 +936,11 @@ function updateKeyHints() {
   const mapped = keymap
     .map((e) => `[${e.primaryKey.toUpperCase()}]=${noteLabel(e.note)}`)
     .join("  ");
+  const extended =
+    "88-key layers: ⌃⌥ low2 | ⌥ low1 | ⌃ down | ⇧ up | ⇧⌥ high1 | ⇧⌃ high2 | ⇧⌃⌥U=A#0";
   const shortcuts =
     "Twinkle [1]–[6] [R]  |  Christmas [7][8][9][0][-][=] [M]  |  Ducks [,][.][/][;] [[]] [L]  |  Bridge [I][O][P][V] [!]  |  Oysya [?][@][#][$][%][^] [&]  |  Golden [space][`][(][)]['] [\"] [|]  |  Black keys [W][E][T][Y][U]";
-  const full = `${mapped}  |  ${shortcuts}`;
+  const full = `${mapped}  |  ${extended}  |  ${shortcuts}`;
   keyHintsEl.textContent = full;
   keyHintsEl.dataset.fullHints = full;
 }
@@ -854,6 +955,20 @@ function findPhraseKeyIndex(meta, key) {
 function handleKeydown(event) {
   if (event.repeat) return;
   const key = event.key;
+
+  if (hasModifiers(event)) {
+    const keyLower = key.length === 1 ? key.toLowerCase() : key;
+    const modKey = modsKey(modsFromEvent(event));
+    const ext = extendedKeymap.find(
+      (e) => e.key === keyLower && modsKey(e.mods) === modKey
+    );
+    if (ext) {
+      event.preventDefault();
+      unlockAudio();
+      playNote(ext.note, noteToKeyEl.get(ext.note) ?? null);
+    }
+    return;
+  }
 
   const entry = keymap.find(
     (e) =>
@@ -983,6 +1098,7 @@ async function init() {
     const text = await res.text();
     const parsed = parsePianoSh(text);
     keymap = parsed.keymap;
+    extendedKeymap = parsed.extendedKeymap;
     songs = parsed.songs;
     songPhraseGap = parsed.songPhraseGap;
 

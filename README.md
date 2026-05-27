@@ -24,6 +24,25 @@ Melody for Oysya is a simplified RH arrangement from public piano-letter tutoria
 
 Golden uses a simplified chorus hook (G3–C5) from the K-pop demo track; phrase keys avoid conflicts with other songs on the Mac layout.
 
+## Full 88 keys from the keyboard (A0–C8)
+
+The **classic mapping above is unchanged** — use it for songs and learning (G3–C5). To play any key on the 88-key piano, use **octave layers** on the same physical note keys (`Z` `X` `N`, `W` `E` `T` `Y` `U`, `A`–`K`):
+
+| Layer | Web (hold) | Terminal `./piano.sh` | Approx. range |
+|-------|------------|-------------------------|---------------|
+| **Classic** | *(none)* | press key directly | G3–C5 |
+| **low2** | Ctrl+Alt (⌃⌥) | `\` then `a` then note | A0–C2 |
+| **low1** | Alt (⌥) | `\` then `s` then note | C♯2–C3 |
+| **down** | Control (⌃) | `\` then `d` then note | C♯3–F3 |
+| **up** | Shift (⇧) | `\` then `g` then note | C♯5–C6 |
+| **high1** | Shift+Alt (⇧⌥) | `\` then `h` then note | C♯6–C7 |
+| **high2** | Shift+Control (⇧⌃) | `\` then `j` then note | C♯7–**C8** |
+| **A♯0** | Shift+Ctrl+Alt + `U` | `\` `u` `U` | A♯0 only |
+
+**Examples:** `Shift+K` → C6 · `Ctrl+Alt+X` → A0 · `Shift+Ctrl+K` → C8 · `A` alone → C4 (middle C).
+
+Mappings are defined in `piano.sh` between `# EXTENDED_KEYMAP_BEGIN` / `# EXTENDED_KEYMAP_END` (JSON). The web UI parses this block; the terminal uses `PLAY_NOTE_EXTENDED` (same offsets).
+
 ## Terminal piano (SoX)
 
 ```bash
@@ -41,7 +60,7 @@ python3 -m http.server 8080
 
 Open [http://localhost:8080/web/](http://localhost:8080/web/)
 
-The page shows a **Mac keyboard map** (two rows, ~1½ octaves for songs) plus a **scrollable 88-key piano** (A0–C8, 52 white + 36 black keys). Click or tap any key to play via Web Audio; frequencies use MIDI 21–108 (A0 = 27.5 Hz). Scroll horizontally on narrow screens to reach low and high notes — the view starts centered on middle C (C4). Mapped Mac keys from `piano.sh` are highlighted in gold. Use **Cover keys** or **Practice** on a phrase to hide key hints while learning; toggle **All note labels** to show every pitch name (default: C notes only on white keys).
+The page shows a **Mac keyboard map** (classic two rows for songs) plus an **octave-layer table** for the full range, and a **scrollable 88-key piano** (A0–C8). Click or tap any key, or use the computer keyboard: classic keys without modifiers, extended keys with modifier layers (see table above). Mapped keys are highlighted in gold (classic letter or modifier hint like ⇧K). **Cover keys** hides hints on both the Mac guide and the piano; **Practice** on a phrase hides hints on phrase cards too.
 
 ## Host online for free
 

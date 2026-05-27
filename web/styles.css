@@ -197,11 +197,70 @@ body {
   color: #a9a9b8;
 }
 
+.mac-extended-guide {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px dashed var(--key-border);
+}
+
+.mac-extended-guide h3 {
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  color: var(--practice);
+}
+
+.extended-layers-table {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.extended-layers-table th,
+.extended-layers-table td {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--key-border);
+  text-align: left;
+}
+
+.extended-layers-table th {
+  background: var(--surface-2);
+  color: var(--accent);
+}
+
+.extended-layers-table kbd {
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  background: var(--surface-2);
+  border: 1px solid var(--key-border);
+  font-family: ui-monospace, monospace;
+  font-size: 0.85em;
+}
+
+.extended-layers-note {
+  margin: 0.65rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.piano-key .key-hint-extended {
+  font-size: 0.55rem;
+  letter-spacing: -0.02em;
+  opacity: 0.95;
+}
+
 .mac-tip {
   margin: 1rem 0 0;
   font-size: 0.8rem;
   color: var(--muted);
   text-align: center;
+}
+
+body.cover-keys .mac-extended-guide .coverable,
+body.cover-keys .extended-layers-table {
+  visibility: hidden;
 }
 
 body.cover-keys .mac-key .coverable {
