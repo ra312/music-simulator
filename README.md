@@ -1,5 +1,8 @@
 # Music Simulator
 
+## public web url
+https://ra312.github.io/music-simulator/web/
+
 A simple piano simulator with a terminal interface and a browser GUI. All key, note, and song phrase mappings live in **`piano.sh`** — the web UI loads and parses that file at runtime.
 
 ## Two-row Mac keyboard (Twin Towers)
